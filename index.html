@@ -441,6 +441,37 @@ img,svg,canvas{max-width:100%;height:auto;display:block}
   #board{ width:100%; }
 }
 
+
+/* === FIX: evitar superposición de pantallas y ajustar escala general === */
+body {
+  font-size: 0.95rem; /* reduce ligeramente el zoom */
+  transform-origin: top center;
+}
+
+.screen {
+  display: none !important; /* ocultar todas por defecto */
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.3s ease;
+}
+
+.screen.active {
+  display: block !important; /* mostrar solo la activa */
+  opacity: 1;
+  visibility: visible;
+  position: relative !important;
+  z-index: 1;
+}
+
+/* Asegurar que las pantallas anteriores no sigan ocupando espacio */
+#mainMenuScreen:not(.active),
+#creatureSelectionScreen:not(.active),
+#gameScreen:not(.active) {
+  display: none !important;
+  opacity: 0 !important;
+  visibility: hidden !important;
+}
+
 </style>
 </head>
 <body>
