@@ -443,10 +443,12 @@ img,svg,canvas{max-width:100%;height:auto;display:block}
 
 
 /* === FIX: evitar superposición de pantallas y ajustar escala general === */
+
 body {
-  font-size: 0.95rem; /* reduce ligeramente el zoom */
+  font-size: 0.9rem !important; /* reducción adicional del zoom */
   transform-origin: top center;
 }
+
 
 .screen {
   display: none !important; /* ocultar todas por defecto */
