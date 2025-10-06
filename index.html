@@ -478,7 +478,7 @@ body {
 </head>
 <body>
 <div class="center">
-  <h1>MONSTRUITOS</h1>
+  <h1>Match-3 Criaturas — Versión Estable 1</h1>
 
   <!-- Welcome -->
   <div id="welcomeScreen" class="screen active">
@@ -517,6 +517,11 @@ body {
 
   <!-- Game screen (Versión Estable 1 base) -->
   <div id="gameScreen" class="screen">
+    <header id="fixedHeader" style="position:fixed;top:0;left:0;width:100%;z-index:999;background:#071233;color:white;display:flex;justify-content:space-between;align-items:center;padding:10px 16px;box-shadow:0 2px 10px rgba(0,0,0,0.4);">
+      <h1 style="margin:0;font-size:20px;letter-spacing:1px;">MONSTRUITOS</h1>
+      <button id="restartBtnTop" style="background:#2563eb;color:white;border:none;padding:8px 12px;border-radius:8px;cursor:pointer;">Reiniciar partida</button>
+    </header>
+    <div style="height:60px;"></div> <!-- separador para evitar que el header tape el contenido -->
     <header style="display:flex;justify-content:space-between;align-items:center">
       <div><strong>Match-3</strong></div>
       <div><span id="infoTurn">Cargando...</span> <span id="timer">120</span></div>
@@ -940,6 +945,7 @@ function awardEnergyToOwnerColor(ownerIndex, color, amount){
 document.getElementById('startBtn').addEventListener('click', ()=> { showScreen('selectScreen'); initSelectionUI(); });
 document.getElementById('playBtn').addEventListener('click', ()=> startGame());
 document.getElementById('restartBtn').addEventListener('click', ()=> startGame(true) );
+document.getElementById('restartBtnTop').addEventListener('click', ()=> startGame(true) );
 document.getElementById('randomP1').addEventListener('click', ()=> randomForPlayer(1));
 document.getElementById('randomP2').addEventListener('click', ()=> randomForPlayer(2));
 
