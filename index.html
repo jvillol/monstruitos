@@ -186,12 +186,25 @@
   50% { transform: scaleX(1.05); opacity: 0.85; }
 }
 /* === AJUSTE VISUAL PARA MÓVIL (pantalla de juego) === */
-  /* Detectar pantallas más pequeñas (por debajo de 768px de ancho) */
-@media (max-width: 768px) {
-  /* Tablero más compacto */
+
+/* ----- 📱 MODO VERTICAL (por debajo de 768px de ancho) ----- */
+@media (max-width: 768px) and (orientation: portrait) {
+  #gameScreen {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+    padding: 4px;
+    box-sizing: border-box;
+  }
+
+  /* Tablero centrado y más compacto */
   #board {
     width: 90vw;
     height: 90vw;
+    display: grid;
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(8, 1fr);
     gap: 2px;
@@ -202,17 +215,17 @@
     border-radius: 4px;
   }
 
-  /* Contenedores de criaturas */
+  /* Criaturas arriba y abajo */
   #p1Creaturas, #p2Creaturas {
     display: flex;
-    justify-content: space-around;
+    justify-content: center;
     align-items: center;
     flex-wrap: wrap;
     gap: 4px;
     padding: 4px;
+    width: 100%;
   }
 
-  /* Cada carta de criatura más pequeña */
   .creature {
     transform: scale(0.75);
     transform-origin: center;
@@ -238,21 +251,76 @@
     font-size: 0.65rem;
   }
 
-  /* Ajustes generales para botones y textos */
   button.btn {
     font-size: 0.7rem;
     padding: 3px 6px;
   }
+}
 
-  /* Espaciado vertical entre jugadores y tablero */
+/* ----- 📲 MODO HORIZONTAL (apaisado) ----- */
+@media (max-width: 1024px) and (orientation: landscape) {
   #gameScreen {
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 25% 50% 25%;
+    grid-template-rows: 1fr;
     align-items: center;
+    justify-items: center;
     height: 100vh;
     overflow: hidden;
-    padding: 2px;
+    padding: 4px;
+    box-sizing: border-box;
+    gap: 2px;
+  }
+
+  #board {
+    width: 95%;
+    height: 95%;
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    gap: 2px;
+  }
+
+  /* Jugador 1 a la izquierda, Jugador 2 a la derecha */
+  #p1Creaturas, #p2Creaturas {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    height: 100%;
+    overflow-y: auto;
+  }
+
+  #p1Creaturas { grid-column: 1; }
+  #board { grid-column: 2; }
+  #p2Creaturas { grid-column: 3; }
+
+  .creature {
+    transform: scale(0.8);
+    width: 130px;
+    margin: 2px 0;
+  }
+
+  .creature img {
+    width: 80px;
+    height: 80px;
+  }
+
+  .creaInfo {
+    font-size: 0.8rem;
+  }
+
+  .bar {
+    height: 8px;
+  }
+
+  .bar-text {
+    font-size: 0.7rem;
+  }
+
+  button.btn {
+    font-size: 0.7rem;
+    padding: 3px 6px;
   }
 }
 
