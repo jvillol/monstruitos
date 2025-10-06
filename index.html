@@ -52,6 +52,64 @@
   50% { filter: brightness(2.3); }
   100% { filter: brightness(1); }
 }
+/* === ESTADO QUEMADO (Ignarok) === */
+.burned {
+  position: relative;
+  box-shadow: 0 0 20px rgba(255, 60, 0, 0.6);
+  animation: burnPulse 1s infinite alternate;
+}
+
+@keyframes burnPulse {
+  0% { box-shadow: 0 0 10px rgba(255, 100, 0, 0.4); }
+  100% { box-shadow: 0 0 25px rgba(255, 20, 0, 0.8); }
+}
+
+/* Partículas de fuego opcionales (sutiles) */
+.burned::after {
+  content: '';
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  background: radial-gradient(circle, rgba(255,150,0,0.8) 20%, transparent 70%);
+  border-radius: 50%;
+  transform: translateX(-50%);
+  animation: burnSmoke 1.2s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes burnSmoke {
+  0% { opacity: 0.8; transform: translate(-50%, 0) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -20px) scale(1.4); }
+}
+/* === EFECTO DE ENREDADERAS (Sylphora) === */
+.vines-effect {
+  position: relative;
+  overflow: hidden;
+}
+
+.vines-effect::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    45deg,
+    rgba(34,197,94,0.3),
+    rgba(34,197,94,0.3) 10px,
+    rgba(21,128,61,0.4) 10px,
+    rgba(21,128,61,0.4) 20px
+  );
+  z-index: 3;
+  animation: vinesWrap 1.5s ease-in-out;
+  pointer-events: none;
+}
+
+@keyframes vinesWrap {
+  0% { opacity: 0; transform: scale(0.8) rotate(10deg); }
+  50% { opacity: 1; transform: scale(1) rotate(0deg); }
+  100% { opacity: 0; transform: scale(1.1) rotate(-10deg); }
+}
 
   .creature{display:flex;gap:10px;align-items:center;padding:8px;border-radius:10px;background:rgba(255,255,255,0.02);margin-bottom:8px}
   .creature img{width:56px;height:56px;border-radius:8px;object-fit:cover}
@@ -126,6 +184,76 @@
 @keyframes pulseReady {
   0%, 100% { transform: scaleX(1); opacity: 1; }
   50% { transform: scaleX(1.05); opacity: 0.85; }
+}
+/* === AJUSTE VISUAL PARA MÓVIL (pantalla de juego) === */
+  /* Detectar pantallas más pequeñas (por debajo de 768px de ancho) */
+@media (max-width: 768px) {
+  /* Tablero más compacto */
+  #board {
+    width: 90vw;
+    height: 90vw;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    gap: 2px;
+  }
+
+  .cell {
+    font-size: 0.9rem;
+    border-radius: 4px;
+  }
+
+  /* Contenedores de criaturas */
+  #p1Creaturas, #p2Creaturas {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px;
+  }
+
+  /* Cada carta de criatura más pequeña */
+  .creature {
+    transform: scale(0.75);
+    transform-origin: center;
+    margin: 2px;
+    width: 120px;
+  }
+
+  .creature img {
+    width: 70px;
+    height: 70px;
+    object-fit: contain;
+  }
+
+  .creaInfo {
+    font-size: 0.75rem;
+  }
+
+  .bar {
+    height: 8px;
+  }
+
+  .bar-text {
+    font-size: 0.65rem;
+  }
+
+  /* Ajustes generales para botones y textos */
+  button.btn {
+    font-size: 0.7rem;
+    padding: 3px 6px;
+  }
+
+  /* Espaciado vertical entre jugadores y tablero */
+  #gameScreen {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+    padding: 2px;
+  }
 }
 
 </style>
@@ -410,14 +538,25 @@ const POWERS = {
   resolveBoard(owner, ()=>{ render(); ctx.onComplete(); });
 },
 
-  // ===== Naturaleza =====
-  sylphora: (attacker,target,ctx) => {
-   target.hp -= 20;
-   // Marca que el rival debe empezar con 1 movimiento en vez de 2
-   const opponentIndex = 1 - ctx.ownerIndex;
-   players[ctx.ownerIndex === 0 ? 1 : 0].skipMovePenalty = true;
-   ctx.onComplete();
-  },
+  sylphora: (attacker, target, ctx) => {
+  target.hp -= 20;
+
+  // Marcar penalización de movimiento
+  const opponentIndex = 1 - ctx.ownerIndex;
+  players[opponentIndex].skipMovePenalty = true;
+
+  // === 💚 EFECTO VISUAL DE ENREDADERAS ===
+  const affectedContainer = document.getElementById(
+    opponentIndex === 0 ? 'p1Creaturas' : 'p2Creaturas'
+  );
+  if (affectedContainer) {
+    affectedContainer.classList.add('vines-effect');
+    setTimeout(() => affectedContainer.classList.remove('vines-effect'), 1500);
+  }
+
+  showBubble(`${players[opponentIndex].name} ha sido atrapado por las enredaderas!`);
+  ctx.onComplete();
+},
 
   terragorn: (attacker,target,ctx) => {
   target.hp -= 20;
@@ -900,6 +1039,21 @@ function renderPlayers(){
       const w = document.createElement('div'); 
       w.className = 'creature'; 
       w.id = `p${pi}-c${ci}`;
+     if (c.burnedTurns && c.burnedTurns > 0) {
+      w.classList.add('burned');
+     }
+     if (c.entangledTurns && c.entangledTurns > 0) {
+      w.classList.add('entangled');
+
+      // Añadimos unas hojitas flotando 🌿
+      for (let i = 0; i < 2; i++) {
+       const leaf = document.createElement('div');
+       leaf.className = 'leaf';
+       leaf.style.left = `${20 + i * 40}%`;
+       leaf.style.top = `${10 + i * 20}%`;
+       w.appendChild(leaf);
+      }
+     }
 
      // 🔴 marcar como eliminada si hp <= 0
      if (c.hp <= 0) {
@@ -1161,55 +1315,55 @@ function updateTimerDisplay(){
 }
 
 /* ================= End turn ================= */
-function endTurn(){
+function endTurn() {
   // Reinicia movimientos del jugador actual
   players[currentPlayer].moves = 2;
 
   const next = 1 - currentPlayer;
 
-  showTurnOverlay(players[next].name, ()=> {
+  showTurnOverlay(players[next].name, () => {
     currentPlayer = next;
     extraTurnsThisTurn = 0;
 
     // === 🔥 APLICAR QUEMADURA (Ignarok) ===
     players[currentPlayer].criaturas.forEach(c => {
-      if(c.hp > 0 && c.burnedTurns && c.burnedTurns > 0){
+      if (c.hp > 0 && c.burnedTurns && c.burnedTurns > 0) {
         c.hp = Math.max(0, c.hp - 5);
         c.burnedTurns--;
 
         showBubble(`${c.nombre} sufre 5 de daño por quemadura!`);
 
-        // si la criatura muere por la quemadura
-        if(c.hp <= 0){
+        // Si muere por la quemadura
+        if (c.hp <= 0) {
           c.hp = 0;
           showBubble(`${c.nombre} ha sido derrotado por la quemadura!`);
         }
       }
     });
 
-    // === Inicializar movimientos ===
-    if(players[currentPlayer].skipMovePenalty){
-      // penalización de Sylphora: empieza con 1 movimiento
-      players[currentPlayer].moves = 1;
-      movesLeft = 1;
-      players[currentPlayer].skipMovePenalty = false; // resetear flag
-      showBubble(`${players[currentPlayer].name} empieza con 1 movimiento por efecto de Sylphora!`);
+    // === 🪴 APLICAR PENALIZACIÓN DE MOVIMIENTO (Sylphora) ===
+    if (players[currentPlayer].skipMovePenalty) {
+      players[currentPlayer].moves = 1; // empieza con solo 1 movimiento
+      players[currentPlayer].skipMovePenalty = false; // se resetea
+      showBubble(`${players[currentPlayer].name} perdió un movimiento por las enredaderas!`);
     } else {
-      // comportamiento normal
-      players[currentPlayer].moves = 2;
-      movesLeft = 2;
+      players[currentPlayer].moves = 2; // normal
     }
+
+    // === Inicializar movimientos ===
+    movesLeft = players[currentPlayer].moves;
 
     resetTimer();
     render();
 
     checkWin(); // comprobar si la partida termina aquí
-    if(!checkWin()){
+    if (!checkWin()) {
       // después de aplicar efectos, limpiar tablero si hay matches
-      resolveBoard(currentPlayer, ()=> { render(); });
+      resolveBoard(currentPlayer, () => { render(); });
     }
   });
 }
+
 
 function showTurnOverlay(name, cb){
   const overlay = document.getElementById('turnOverlay'); const txt = document.getElementById('turnText');
