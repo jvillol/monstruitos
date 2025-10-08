@@ -207,7 +207,7 @@
   50% { transform: scaleX(1.05); opacity: 0.85; }
 }
 
-/* ----- 📱 MODO VERTICAL (REFERENCIA EXACTA: TABLERO 8x8 + CARTAS VISIBLES) ----- */
+/* ----- 📱 MODO VERTICAL (REFERENCIA FINAL) ----- */
 @media (max-width: 768px) and (orientation: portrait) {
   #gameScreen {
     display: flex !important;
@@ -218,51 +218,39 @@
     overflow: hidden;
     padding: 4px 0;
     box-sizing: border-box;
-    background: #0b1428; /* color base de fondo según tu imagen */
+    background: #0b1428;
   }
 
-  /* --- Cartas superiores e inferiores --- */
+  /* cartas superiores e inferiores */
   #p1Creaturas, #p2Creaturas {
     display: flex;
     flex-direction: row;
     justify-content: space-evenly;
     align-items: center;
     width: 100%;
-    gap: 6px;
+    gap: 8px;
     margin: 0;
     flex-wrap: nowrap;
-    transform: scale(0.96);
   }
 
-  /* --- Tablero 8x8 centrado --- */
-  #board {
-    width: 86vw;
-    aspect-ratio: 1 / 1;
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    grid-template-rows: repeat(8, 1fr);
-    gap: 2px;
-    margin: 2px 0;
-  }
-
-  /* --- Carta de criatura --- */
+  /* carta de criatura */
   .creature {
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
-    width: 46vw;
-    max-width: 190px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 10px;
-    padding: 6px;
+    width: 48vw;
+    max-width: 220px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 8px;
     box-sizing: border-box;
   }
 
   .creature img {
-    width: 68px;
-    height: 68px;
-    border-radius: 8px;
+    width: 72px;
+    height: 72px;
+    border-radius: 10px;
     object-fit: contain;
     margin-right: 8px;
     flex-shrink: 0;
@@ -271,11 +259,12 @@
   .creaInfo {
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
-    gap: 5px;
+    justify-content: flex-start;
+    gap: 6px;
     flex: 1;
     font-size: 0.8rem;
     min-width: 0;
+    overflow: hidden;
   }
 
   .creaInfo .name {
@@ -286,14 +275,14 @@
     text-overflow: ellipsis;
   }
 
-  /* --- Barras de vida y energía --- */
+  /* barras ajustadas (no cortadas) */
   .bar {
     height: 12px;
     border-radius: 8px;
-    overflow: hidden;
+    overflow: visible;
     position: relative;
     width: 100%;
-    background: rgba(255, 255, 255, 0.04);
+    background: rgba(255,255,255,0.06);
   }
 
   .bar .fill {
@@ -312,13 +301,25 @@
     font-weight: 800;
     color: #e6eef8;
     text-shadow: 0 1px 0 rgba(0,0,0,0.5);
+    z-index: 2;
   }
 
-  .bar .hpFill { background: linear-gradient(90deg, #ef4444, #f87171); }
-  .bar .energyFill { background: linear-gradient(90deg, #fbbf24, #4ade80, #60a5fa); background-size:200% 100%; }
+  .bar .hpFill { background: linear-gradient(90deg,#ef4444,#f87171); }
+  .bar .energyFill { background: linear-gradient(90deg,#fbbf24,#4ade80,#60a5fa); background-size:200% 100%; }
   .energyFill.glow { filter: brightness(1.35); }
 
-  /* --- Botones de control --- */
+  /* tablero centrado */
+  #board {
+    width: 82vw;
+    aspect-ratio: 1 / 1;
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    gap: 2px;
+    margin: 2px 0;
+  }
+
+  /* botones */
   .controls {
     display: flex;
     justify-content: space-between;
