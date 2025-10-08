@@ -207,8 +207,7 @@
   50% { transform: scaleX(1.05); opacity: 0.85; }
 }
 
-
-/* ----- 📱 MODO VERTICAL (OPTIMIZADO V2 - CARTAS MÁS ANCHAS) ----- */
+/* ----- 📱 MODO VERTICAL (OPTIMIZADO V3 - CARTAS HORIZONTALES) ----- */
 @media (max-width: 768px) and (orientation: portrait) {
   #gameScreen {
     display: flex !important;
@@ -241,41 +240,65 @@
     align-items: center;
     flex-wrap: nowrap;
     width: 100%;
-    gap: 6px;
+    gap: 10px;
     margin: 4px 0;
   }
 
+  /* carta de criatura: imagen izquierda, info derecha */
   .creature {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: flex-start;
     width: 48vw;
-    max-width: 180px;
-    transform: scale(0.85);
-    transform-origin: center;
+    max-width: 190px;
     background: rgba(255,255,255,0.05);
-    padding: 6px;
     border-radius: 10px;
+    padding: 6px;
+    box-sizing: border-box;
+    transform: scale(0.9);
+    transform-origin: center;
   }
 
   .creature img {
     width: 72px;
     height: 72px;
+    border-radius: 8px;
     object-fit: contain;
+    margin-right: 6px;
+    flex-shrink: 0;
   }
 
   .creaInfo {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    gap: 4px;
+    flex: 1;
     font-size: 0.78rem;
   }
 
   .bar {
     height: 9px;
+    border-radius: 6px;
+    overflow: hidden;
   }
 
   .bar-text {
     font-size: 0.72rem;
   }
 
+  .controls {
+    display: flex;
+    justify-content: space-between;
+    gap: 4px;
+    margin-top: 4px;
+  }
+
   button.btn {
     font-size: 0.72rem;
     padding: 4px 6px;
+    flex: 1;
   }
 
   #fixedHeader {
@@ -283,6 +306,7 @@
     box-shadow: none;
   }
 }
+
 
 
 @media (max-width: 1024px) and (orientation: landscape) {
