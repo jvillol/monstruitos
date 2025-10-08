@@ -207,88 +207,110 @@
   50% { transform: scaleX(1.05); opacity: 0.85; }
 }
 
-/* ----- 📱 MODO VERTICAL (REFERENCIA FINAL) ----- */
+/* ---------- MODO VERTICAL: LAYOUT CALIBRADO (usar después de tus reglas previas) ---------- */
 @media (max-width: 768px) and (orientation: portrait) {
+  :root {
+    --top-h: 18vh;    /* altura área superior (cartas) */
+    --board-h: 56vh;  /* altura del tablero (se intenta mantener cuadrado) */
+    --bot-h: 18vh;    /* altura área inferior (cartas) */
+    --gap-v: 2vh;     /* pequeño gap total si quieres ajustar */
+  }
+
+  /* contenedor principal */
   #gameScreen {
     display: flex !important;
     flex-direction: column;
     align-items: center;
-    justify-content: space-between;
-    height: 100vh;
-    overflow: hidden;
-    padding: 4px 0;
-    box-sizing: border-box;
-    background: #0b1428;
-  }
-
-  /* cartas superiores e inferiores */
-  #p1Creaturas, #p2Creaturas {
-    display: flex;
-    flex-direction: row;
-    justify-content: space-evenly;
-    align-items: center;
-    width: 100%;
-    gap: 8px;
-    margin: 0;
-    flex-wrap: nowrap;
-  }
-
-  /* carta de criatura */
-  .creature {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
     justify-content: flex-start;
-    width: 48vw;
-    max-width: 220px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 12px;
-    padding: 8px;
+    height: 100vh;
+    padding: env(safe-area-inset-top, 6px) 8px env(safe-area-inset-bottom, 6px);
     box-sizing: border-box;
+    gap: 6px;
+    overflow: hidden;
+    background: #071029; /* oscuro base similar a referencia */
   }
 
-  .creature img {
-    width: 72px;
-    height: 72px;
+  /* --- Zonas: arriba / tablero / abajo --- */
+  #p1Creaturas, #p2Creaturas {
+    box-sizing: border-box;
+    width: 100%;
+    height: var(--top-h); /* arriba y abajo usarán var(--top-h) y var(--bot-h) respectivamente */
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    padding: 0 6px;
+  }
+  /* Si quieres que la zona inferior tenga altura distinta (ejemplo var) */
+  #p2Creaturas { height: var(--bot-h); }
+
+  /* Cada carta: 50% menos gap -> suficiente ancho para texto y barras */
+  #p1Creaturas .creature,
+  #p2Creaturas .creature {
+    width: calc(50% - 8px);      /* ocupa la mitad disponible */
+    max-width: 240px;            /* evita que crezca excesivamente en pantallas anchas */
+    min-width: 160px;            /* evita colapso */
+    height: calc(100% - 8px);    /* ocupar verticalmente la zona de cartas */
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px;
+    box-sizing: border-box;
+    background: rgba(255,255,255,0.04);
+    border-radius: 14px;
+    overflow: visible;           /* permitir que barras no se recorten */
+  }
+
+  /* Imagen de criatura (fija y no se comprime) */
+  #p1Creaturas .creature img,
+  #p2Creaturas .creature img {
+    width: 88px;
+    height: 88px;
+    flex-shrink: 0;
     border-radius: 10px;
     object-fit: contain;
-    margin-right: 8px;
-    flex-shrink: 0;
+    margin: 2px 0 0 4px;
   }
 
-  .creaInfo {
+  /* Info: se adapta al espacio restante (evitar colapso) */
+  #p1Creaturas .creaInfo,
+  #p2Creaturas .creaInfo {
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
     gap: 6px;
-    flex: 1;
-    font-size: 0.8rem;
-    min-width: 0;
-    overflow: hidden;
+    flex: 1 1 auto;      /* crecer y encoger, pero respetando min-width */
+    min-width: 0;        /* imprescindible para que flex no haga overflow */
+    overflow: visible;
+    word-break: break-word;
+    white-space: normal;  /* aseguramos que el texto se envuelva correctamente */
+    font-size: 0.95rem;
+    line-height: 1.05;
   }
 
   .creaInfo .name {
-    font-size: 0.95rem;
+    font-size: 1.02rem;
     font-weight: 800;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
-  /* barras ajustadas (no cortadas) */
+  /* Barras: aseguramos que no se corten y el texto numérico esté encima */
   .bar {
     height: 12px;
     border-radius: 8px;
-    overflow: visible;
     position: relative;
     width: 100%;
-    background: rgba(255,255,255,0.06);
+    background: rgba(255,255,255,0.04);
+    overflow: visible;
   }
 
   .bar .fill {
     height: 100%;
     width: 0%;
-    transition: width 0.35s cubic-bezier(.2,.8,.2,1);
+    transition: width .35s cubic-bezier(.2,.8,.2,1);
     box-shadow: inset 0 -4px 8px rgba(0,0,0,0.35);
   }
 
@@ -301,44 +323,46 @@
     font-weight: 800;
     color: #e6eef8;
     text-shadow: 0 1px 0 rgba(0,0,0,0.5);
-    z-index: 2;
+    z-index: 3;
+    pointer-events: none;
   }
 
   .bar .hpFill { background: linear-gradient(90deg,#ef4444,#f87171); }
   .bar .energyFill { background: linear-gradient(90deg,#fbbf24,#4ade80,#60a5fa); background-size:200% 100%; }
   .energyFill.glow { filter: brightness(1.35); }
 
-  /* tablero centrado */
+  /* --- Tablero: intento de mantenerlo cuadrado y que quepa en el espacio central --- */
   #board {
-    width: 82vw;
-    aspect-ratio: 1 / 1;
     display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    grid-template-rows: repeat(8, 1fr);
-    gap: 2px;
-    margin: 2px 0;
+    grid-template-columns: repeat(8,1fr);
+    grid-template-rows: repeat(8,1fr);
+    gap: 4px;
+    /* ancho = mínimo entre 86vw (deseado por ancho) y la altura central disponible (56vh) */
+    width: min(86vw, 56vh);
+    aspect-ratio: 1 / 1;
+    margin: 6px 0;
+    box-sizing: border-box;
   }
 
-  /* botones */
+  /* botones de control (se mantienen pequeñitos) */
   .controls {
     display: flex;
     justify-content: space-between;
-    gap: 6px;
+    gap: 8px;
     margin-top: 6px;
   }
-
   button.btn {
-    font-size: 0.75rem;
+    font-size: 0.76rem;
     padding: 6px 8px;
     flex: 1;
-    min-width: 48px;
     border-radius: 8px;
   }
 
-  #fixedHeader {
-    position: relative !important;
-    box-shadow: none;
-  }
+  /* Eliminar cualquier transform que esté en conflicto (si existe en otro lado) */
+  #p1Creaturas, #p2Creaturas, .creature { transform: none !important; }
+
+  /* --- pequeña protección para notch / safe area --- */
+  #gameScreen { padding-top: calc(env(safe-area-inset-top, 0px) + 6px); padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6px); }
 }
 
 @media (max-width: 1024px) and (orientation: landscape) {
