@@ -207,85 +207,52 @@
   50% { transform: scaleX(1.05); opacity: 0.85; }
 }
 
-/* ----- 📱 MODO VERTICAL (por debajo de 768px de ancho) ----- */
+
+/* ----- 📱 MODO VERTICAL (OPTIMIZADO) ----- */
 @media (max-width: 768px) and (orientation: portrait) {
   #gameScreen {
-    display: flex;
+    display: flex !important;
     flex-direction: column;
-    justify-content: flex-start; /* tablero más arriba */
     align-items: center;
+    justify-content: flex-start;
     height: 100vh;
     overflow: hidden;
-    padding: 4px;
+    padding: 6px;
     box-sizing: border-box;
-    gap: 4px;
+    gap: 8px;
   }
 
-  /* Tablero más compacto y centrado mejor */
+  /* tablero centrado y cuadrado */
   #board {
-    width: 85vw;
-    height: 85vw;
-    margin: 4px 0;
+    width: 88vw;
+    aspect-ratio: 1 / 1;
     display: grid;
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(8, 1fr);
     gap: 2px;
+    margin: 6px 0;
   }
 
-  /* Ajustar criaturas para que quepan todas */
+  /* criaturas arriba y abajo */
   #p1Creaturas, #p2Creaturas {
     display: flex;
-    justify-content: center;
+    flex-direction: row;
+    justify-content: space-around;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 4px;
-    padding: 2px;
+    flex-wrap: nowrap;
     width: 100%;
-  }
-
-  #p1Creaturas {
-    margin-bottom: 2px;
-  }
-
-  #p2Creaturas {
-    margin-top: auto;
-    margin-bottom: 4px;
+    gap: 6px;
+    margin: 4px 0;
   }
 
   .creature {
-    transform: scale(0.7);
+    width: 45vw;
+    max-width: 160px;
+    transform: scale(0.8);
     transform-origin: center;
-    margin: 2px;
-    width: 110px;
-  }
-
-  .creature img {
-    width: 65px;
-    height: 65px;
-    object-fit: contain;
-  }
-
-  .cell {
-    font-size: 0.8rem;
-    border-radius: 4px;
-  }
-
-  /* Criaturas arriba y abajo */
-  #p1Creaturas, #p2Creaturas {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 4px;
+    background: rgba(255,255,255,0.05);
     padding: 4px;
-    width: 100%;
-  }
-
-  .creature {
-    transform: scale(0.75);
-    transform-origin: center;
-    margin: 2px;
-    width: 120px;
+    border-radius: 10px;
   }
 
   .creature img {
@@ -303,16 +270,21 @@
   }
 
   .bar-text {
-    font-size: 0.65rem;
+    font-size: 0.7rem;
   }
 
   button.btn {
     font-size: 0.7rem;
-    padding: 3px 6px;
+    padding: 4px 6px;
+  }
+
+  #fixedHeader {
+    position: relative !important;
+    box-shadow: none;
   }
 }
 
-/* ----- 📲 MODO HORIZONTAL (apaisado) ----- */
+
 @media (max-width: 1024px) and (orientation: landscape) {
   #gameScreen {
     display: grid;
