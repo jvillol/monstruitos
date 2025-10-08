@@ -207,141 +207,130 @@
   50% { transform: scaleX(1.05); opacity: 0.85; }
 }
 
-/* ----- 📱 MODO VERTICAL (OPTIMIZADO V3 - CARTAS HORIZONTALES, BARRAS MEJORADAS) ----- */
+/* ----- 📱 MODO VERTICAL AJUSTADO A LA REFERENCIA (todo visible, sin scroll) ----- */
 @media (max-width: 768px) and (orientation: portrait) {
   #gameScreen {
     display: flex !important;
     flex-direction: column;
     align-items: center;
-    justify-content: flex-start;
+    justify-content: space-between;
     height: 100vh;
     overflow: hidden;
-    padding: 6px;
+    padding: 4px 6px;
     box-sizing: border-box;
-    gap: 8px;
+    gap: 6px;
   }
 
-  /* tablero centrado y cuadrado (ligeramente reducido para dar espacio a las cartas) */
+  /* tablero más compacto y centrado */
   #board {
-    width: 82vw;
+    width: 80vw;
     aspect-ratio: 1 / 1;
     display: grid;
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(8, 1fr);
     gap: 2px;
-    margin: 6px 0;
+    margin: 2px 0;
   }
 
-  /* criaturas arriba y abajo: dos cartas en fila con separación */
+  /* criaturas arriba y abajo */
   #p1Creaturas, #p2Creaturas {
     display: flex;
     flex-direction: row;
-    justify-content: space-evenly;
+    justify-content: space-around;
     align-items: center;
-    flex-wrap: nowrap;
     width: 100%;
-    gap: 10px;
-    margin: 6px 0;
+    gap: 6px;
+    margin: 0;
+    flex-wrap: nowrap;
+    transform: scale(0.95);
   }
 
-  /* carta de criatura: imagen izquierda, info derecha (horizontal) */
+  /* carta de criatura */
   .creature {
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
-    width: 50vw;
-    max-width: 200px;
-    background: rgba(255,255,255,0.05);
-    border-radius: 10px;
-    padding: 8px;
+    width: 45vw;
+    max-width: 180px;
+    background: rgba(255,255,255,0.06);
+    border-radius: 12px;
+    padding: 6px;
     box-sizing: border-box;
-    transform: scale(0.92);
-    transform-origin: center;
   }
 
   .creature img {
-    width: 72px;
-    height: 72px;
+    width: 64px;
+    height: 64px;
     border-radius: 8px;
     object-fit: contain;
-    margin-right: 8px;
-    flex-shrink: 0;
+    margin-right: 6px;
   }
 
   .creaInfo {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    gap: 6px;
+    gap: 4px;
     flex: 1;
-    font-size: 0.78rem;
-    min-width: 0; /* permite que el contenido se reduzca si hace falta */
+    font-size: 0.75rem;
+    min-width: 0;
   }
 
   .creaInfo .name {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     font-weight: 800;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
-  /* BARRAS: la parte visual (fill) y el texto numérico a la derecha para legibilidad */
+  /* barras compactas */
   .bar {
-    height: 12px;
+    height: 10px;
     border-radius: 8px;
-    overflow: hidden;
     position: relative;
     width: 100%;
-    min-width: 80px;
-    padding-right: 56px; /* espacio para el número a la derecha */
-    box-sizing: border-box;
     background: rgba(255,255,255,0.04);
   }
 
   .bar .fill {
     height: 100%;
     width: 0%;
-    transition: width .35s cubic-bezier(.2,.8,.2,1);
-    box-shadow: inset 0 -4px 8px rgba(0,0,0,0.35);
+    transition: width 0.35s ease-in-out;
   }
 
   .bar-text {
     position: absolute;
-    right: 6px;
+    right: 4px;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 0.72rem;
-    font-weight: 800;
+    font-size: 0.68rem;
+    font-weight: 700;
     color: #e6eef8;
-    z-index: 6;
-    pointer-events: none;
-    white-space: nowrap;
     text-shadow: 0 1px 0 rgba(0,0,0,0.5);
   }
 
-  /* ajustes específicos para la barra de energía (brillo cuando lista) */
-  .energyFill.glow { filter: brightness(1.35); box-shadow: 0 0 14px rgba(255,200,80,0.12), inset 0 -4px 8px rgba(0,0,0,0.35); }
+  /* energía y vida */
+  .bar .hpFill { background: linear-gradient(90deg,#ef4444,#f87171); }
+  .bar .energyFill { background: linear-gradient(90deg,#fbbf24,#4ade80,#60a5fa); background-size:200% 100%; }
 
-  /* Controles (botones) alineados uno al lado del otro */
+  .energyFill.glow { filter: brightness(1.35); }
+
+  /* botones */
   .controls {
     display: flex;
-    justify-content: space-between;
-    gap: 6px;
-    margin-top: 6px;
+    justify-content: space-evenly;
+    gap: 4px;
+    margin-top: 4px;
   }
 
   button.btn {
-    font-size: 0.75rem;
-    padding: 6px 8px;
+    font-size: 0.7rem;
+    padding: 5px 6px;
     flex: 1;
-    min-width: 48px;
+    border-radius: 8px;
   }
-
-  /* pequeños ajustes */
-  .bar .hpFill { background: linear-gradient(90deg,#16a34a,#4ade80); }
-  .bar .energyFill { background: linear-gradient(90deg,#f97316,#facc15,#4ade80,#60a5fa,#c084fc); background-size:200% 100%; }
 
   #fixedHeader {
     position: relative !important;
