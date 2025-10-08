@@ -207,7 +207,7 @@
   50% { transform: scaleX(1.05); opacity: 0.85; }
 }
 
-/* ----- 📱 MODO VERTICAL (OPTIMIZADO V3 - CARTAS HORIZONTALES) ----- */
+/* ----- 📱 MODO VERTICAL (OPTIMIZADO V3 - CARTAS HORIZONTALES, BARRAS MEJORADAS) ----- */
 @media (max-width: 768px) and (orientation: portrait) {
   #gameScreen {
     display: flex !important;
@@ -221,9 +221,9 @@
     gap: 8px;
   }
 
-  /* tablero centrado y cuadrado */
+  /* tablero centrado y cuadrado (ligeramente reducido para dar espacio a las cartas) */
   #board {
-    width: 84vw;
+    width: 82vw;
     aspect-ratio: 1 / 1;
     display: grid;
     grid-template-columns: repeat(8, 1fr);
@@ -232,7 +232,7 @@
     margin: 6px 0;
   }
 
-  /* criaturas arriba y abajo */
+  /* criaturas arriba y abajo: dos cartas en fila con separación */
   #p1Creaturas, #p2Creaturas {
     display: flex;
     flex-direction: row;
@@ -241,22 +241,22 @@
     flex-wrap: nowrap;
     width: 100%;
     gap: 10px;
-    margin: 4px 0;
+    margin: 6px 0;
   }
 
-  /* carta de criatura: imagen izquierda, info derecha */
+  /* carta de criatura: imagen izquierda, info derecha (horizontal) */
   .creature {
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
-    width: 48vw;
-    max-width: 190px;
+    width: 50vw;
+    max-width: 200px;
     background: rgba(255,255,255,0.05);
     border-radius: 10px;
-    padding: 6px;
+    padding: 8px;
     box-sizing: border-box;
-    transform: scale(0.9);
+    transform: scale(0.92);
     transform-origin: center;
   }
 
@@ -265,7 +265,7 @@
     height: 72px;
     border-radius: 8px;
     object-fit: contain;
-    margin-right: 6px;
+    margin-right: 8px;
     flex-shrink: 0;
   }
 
@@ -273,41 +273,81 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    gap: 4px;
+    gap: 6px;
     flex: 1;
     font-size: 0.78rem;
+    min-width: 0; /* permite que el contenido se reduzca si hace falta */
   }
 
-  .bar {
-    height: 9px;
-    border-radius: 6px;
+  .creaInfo .name {
+    font-size: 0.95rem;
+    font-weight: 800;
+    white-space: nowrap;
     overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* BARRAS: la parte visual (fill) y el texto numérico a la derecha para legibilidad */
+  .bar {
+    height: 12px;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+    min-width: 80px;
+    padding-right: 56px; /* espacio para el número a la derecha */
+    box-sizing: border-box;
+    background: rgba(255,255,255,0.04);
+  }
+
+  .bar .fill {
+    height: 100%;
+    width: 0%;
+    transition: width .35s cubic-bezier(.2,.8,.2,1);
+    box-shadow: inset 0 -4px 8px rgba(0,0,0,0.35);
   }
 
   .bar-text {
+    position: absolute;
+    right: 6px;
+    top: 50%;
+    transform: translateY(-50%);
     font-size: 0.72rem;
+    font-weight: 800;
+    color: #e6eef8;
+    z-index: 6;
+    pointer-events: none;
+    white-space: nowrap;
+    text-shadow: 0 1px 0 rgba(0,0,0,0.5);
   }
 
+  /* ajustes específicos para la barra de energía (brillo cuando lista) */
+  .energyFill.glow { filter: brightness(1.35); box-shadow: 0 0 14px rgba(255,200,80,0.12), inset 0 -4px 8px rgba(0,0,0,0.35); }
+
+  /* Controles (botones) alineados uno al lado del otro */
   .controls {
     display: flex;
     justify-content: space-between;
-    gap: 4px;
-    margin-top: 4px;
+    gap: 6px;
+    margin-top: 6px;
   }
 
   button.btn {
-    font-size: 0.72rem;
-    padding: 4px 6px;
+    font-size: 0.75rem;
+    padding: 6px 8px;
     flex: 1;
+    min-width: 48px;
   }
+
+  /* pequeños ajustes */
+  .bar .hpFill { background: linear-gradient(90deg,#16a34a,#4ade80); }
+  .bar .energyFill { background: linear-gradient(90deg,#f97316,#facc15,#4ade80,#60a5fa,#c084fc); background-size:200% 100%; }
 
   #fixedHeader {
     position: relative !important;
     box-shadow: none;
   }
 }
-
-
 
 @media (max-width: 1024px) and (orientation: landscape) {
   #gameScreen {
@@ -519,8 +559,7 @@ body {
     </header>
     <div style="height:60px;"></div> <!-- separador para evitar que el header tape el contenido -->
     <header style="display:flex;justify-content:space-between;align-items:center">
-      <div><strong>Match-3</strong></div>
-      <div><span id="infoTurn">Cargando...</span> <span id="timer">120</span></div>
+            <div><span id="infoTurn">Cargando...</span> <span id="timer">120</span></div>
       <div><button id="restartBtn">Reiniciar partida</button></div>
     </header>
 
