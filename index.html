@@ -643,37 +643,55 @@ const POWERS = {
    - Aplica efecto especial
    - Siempre llama a ctx.onComplete()
 */
-  // ===== Agua =====
-  aqualis: (attacker,target,ctx) => {
-    target.hp -= 40; // Daño fuerte
-    ctx.onComplete();
-  },
-  cryon: (attacker, target, ctx) => {
+ // ===== Agua =====
+aqualis: (attacker, target, ctx) => {
+  target.hp -= 40; // Daño fuerte
+  ctx.onComplete();
+},
+
+cryon: (attacker, target, ctx) => {
   target.hp -= 20;
   const owner = ctx.ownerIndex;
-
   const counts = {};
 
-  // Convierte 3 casillas aleatorias en "agua"
-  for (let i = 0; i < 3; i++) {
-    const rx = Math.floor(Math.random() * COLS);
-    const ry = Math.floor(Math.random() * ROWS);
-    const oldTile = board[ry][rx];
-
-    if (oldTile && oldTile !== 'agua') {
-      // contar la ficha reemplazada
-      counts[oldTile] = (counts[oldTile] || 0) + 1;
+  // recolectar todas las posiciones que NO sean ya 'agua' y no sean null
+  const candidates = [];
+  for (let y = 0; y < ROWS; y++) {
+    for (let x = 0; x < COLS; x++) {
+      const t = board[y][x];
+      if (t != null && t !== 'agua') candidates.push({ x, y });
     }
-
-    // convertir la ficha a agua
-    board[ry][rx] = 'agua';
   }
 
-  // Dar energía según las fichas convertidas
-  Object.keys(counts).forEach(color => {
-    if (color === WOLF) return; // nunca sumar energía por lobos
-    awardEnergyToOwnerColor(owner, color, counts[color]);
-  });
+  if (candidates.length > 0) {
+    // barajar (Fisher-Yates)
+    for (let i = candidates.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      const tmp = candidates[i];
+      candidates[i] = candidates[j];
+      candidates[j] = tmp;
+    }
+
+    // convertir hasta 3 posiciones únicas
+    const toConvert = Math.min(3, candidates.length);
+    for (let i = 0; i < toConvert; i++) {
+      const pos = candidates[i];
+      const oldTile = board[pos.y][pos.x];
+
+      if (oldTile && oldTile !== 'agua') {
+        counts[oldTile] = (counts[oldTile] || 0) + 1;
+      }
+
+      // convertir la ficha a agua
+      board[pos.y][pos.x] = 'agua';
+    }
+
+    // Dar energía según las fichas convertidas
+    Object.keys(counts).forEach(color => {
+      if (color === WOLF) return; // nunca sumar energía por lobos
+      awardEnergyToOwnerColor(owner, color, counts[color]);
+    });
+  }
 
   render();
   ctx.onComplete();
