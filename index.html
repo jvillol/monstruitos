@@ -1039,6 +1039,14 @@ function startGame(forceRestart=false){
   showScreen('gameScreen');
   resetTimer();
   render();
+
+  // 🔹 Precargar imágenes de evolución para evitar retrasos
+  Object.values(CREATURES).forEach(c => {
+    if (c.imgEvo) {
+      const preload = new Image();
+      preload.src = c.imgEvo;
+    }
+  });
 }
 
 /* create creature instance from type key */
