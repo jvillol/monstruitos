@@ -207,57 +207,61 @@
   50% { transform: scaleX(1.05); opacity: 0.85; }
 }
 
-/* ---------- MODO VERTICAL (ESTRUCTURA IGUAL A ORDENADOR, ESCALADA PARA MÓVIL) ---------- */
+/* ---------- MODO VERTICAL (ESCALA EXACTA AL DISEÑO DE ORDENADOR) ---------- */
 @media (max-width: 768px) and (orientation: portrait) {
   html, body {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
     height: 100%;
-    overflow: hidden;
   }
 
+  /* Contenedor global */
   #gameScreen {
-    display: flex !important;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: center;
-    height: 100vh;
+    position: relative;
     width: 100vw;
-    overflow: hidden;
-    padding: 4px 0;
-    box-sizing: border-box;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: #0b1428;
-    gap: 4px;
+    overflow: hidden;
   }
 
-  /* cartas superiores e inferiores */
+  /* Escalamos todo el contenido del juego para que encaje perfectamente */
+  #gameContainer {
+    transform-origin: top center;
+    transform: scale(0.85); /* 🔧 ajusta entre 0.8 y 0.9 si quieres más o menos zoom */
+    width: 100%;
+    height: auto;
+  }
+
+  /* cartas superiores e inferiores exactamente igual que en PC */
   #p1Creaturas, #p2Creaturas {
     display: flex;
+    flex-direction: row;
     justify-content: space-evenly;
     align-items: center;
     width: 100%;
-    height: 18vh; /* altura reducida pero estable */
-    max-height: 130px;
-    gap: 6px;
-    flex-wrap: nowrap;
+    gap: 10px;
+    margin: 6px 0;
   }
 
-  /* carta de criatura (idéntica a PC pero reducida proporcionalmente) */
   .creature {
     display: flex;
     flex-direction: row;
     align-items: center;
     justify-content: flex-start;
-    width: 45vw;
-    max-width: 210px;
-    min-width: 160px;
+    width: 260px;
     background: rgba(255,255,255,0.05);
-    border-radius: 12px;
-    padding: 6px 8px;
+    border-radius: 10px;
+    padding: 8px;
     box-sizing: border-box;
   }
 
   .creature img {
-    width: 64px;
-    height: 64px;
+    width: 80px;
+    height: 80px;
     border-radius: 8px;
     object-fit: contain;
     margin-right: 8px;
@@ -268,32 +272,23 @@
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    gap: 6px;
     flex: 1;
-    font-size: 0.8rem;
-    min-width: 0;
-    overflow: hidden;
+    font-size: 0.9rem;
+    color: #e6eef8;
   }
 
   .creaInfo .name {
-    font-size: 0.92rem;
+    font-size: 1rem;
     font-weight: 800;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
-  .creaInfo .desc {
-    font-size: 0.8rem;
-    line-height: 1.05;
-    word-break: break-word;
-    white-space: normal;
-  }
-
-  /* barras iguales que PC */
   .bar {
-    height: 10px;
-    border-radius: 6px;
-    overflow: visible;
+    height: 12px;
+    border-radius: 8px;
     position: relative;
     width: 100%;
     background: rgba(255,255,255,0.05);
@@ -307,36 +302,35 @@
 
   .bar .hpFill { background: linear-gradient(90deg,#ef4444,#f87171); }
   .bar .energyFill { background: linear-gradient(90deg,#fbbf24,#4ade80,#60a5fa); }
-  .energyFill.glow { filter: brightness(1.3); }
 
   .bar-text {
     position: absolute;
     right: 6px;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 0.72rem;
+    font-size: 0.7rem;
     font-weight: 800;
     color: #e6eef8;
     text-shadow: 0 1px 0 rgba(0,0,0,0.5);
     white-space: nowrap;
   }
 
-  /* botones */
   .controls {
     display: flex;
     justify-content: space-between;
-    gap: 4px;
-    margin-top: 4px;
+    gap: 6px;
+    margin-top: 6px;
   }
 
   button.btn {
-    font-size: 0.72rem;
-    padding: 5px 8px;
+    font-size: 0.75rem;
+    padding: 6px 8px;
     flex: 1;
+    min-width: 48px;
     border-radius: 8px;
   }
 
-  /* tablero centrado y perfectamente cuadrado */
+  /* tablero exactamente igual que PC */
   #board {
     width: 82vw;
     aspect-ratio: 1 / 1;
@@ -344,7 +338,7 @@
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(8, 1fr);
     gap: 2px;
-    margin: 0;
+    margin: 6px 0;
   }
 
   #fixedHeader {
@@ -513,6 +507,87 @@ body {
   opacity: 0 !important;
   visibility: hidden !important;
 }
+/* ================== RESPONSIVE (MÓVIL) ================== */
+@media (max-width: 768px) {
+  body {
+    overflow-y: auto;
+    transform: scale(1);
+    transform-origin: top;
+  }
+
+  /* Mantener proporciones correctas en vertical */
+  #gameScreen {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+    padding: 4px;
+  }
+
+  /* Tablero más centrado y criaturas más cerca */
+  #board {
+    width: 90vw;
+    height: auto;
+    margin: 8px 0;
+  }
+
+  /* Criaturas más pequeñas pero visibles */
+  .creature img {
+    width: 55px;
+    height: 55px;
+  }
+
+  /* Ajustar la posición de las criaturas del Jugador 1 y 2 */
+  #p1Creaturas, #p2Creaturas {
+    display: flex;
+    justify-content: center;
+    gap: 4px;
+    width: 100%;
+  }
+
+  #p1Creaturas {
+    margin-top: 2px;
+    margin-bottom: 4px;
+  }
+
+  #p2Creaturas {
+    margin-top: -4px; /* Acerca las criaturas del Jugador 2 al tablero */
+    margin-bottom: 2px;
+  }
+
+  /* Textos e interfaz más compactos */
+  #infoTurn {
+    font-size: 13px;
+    margin-bottom: 3px;
+  }
+
+  #timer {
+    font-size: 14px;
+  }
+
+  /* Pantallas de bienvenida y selección centradas correctamente */
+  #welcomeScreen,
+  #selectScreen,
+  #gameScreen {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: none;
+  }
+
+  #welcomeScreen.active,
+  #selectScreen.active,
+  #gameScreen.active {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+}
 
 </style>
 </head>
@@ -556,17 +631,31 @@ body {
   </div>
 
   <!-- Game screen (Versión Estable 1 base) -->
-  <div id="gameScreen" class="screen">
+<div id="gameScreen" class="screen">
+
+  <!-- ⬇️ ABRIMOS el contenedor escalable -->
+  <div id="gameContainer">
+
     <header id="fixedHeader" style="position:fixed;top:0;left:0;width:100%;z-index:999;background:#071233;color:white;display:flex;justify-content:space-between;align-items:center;padding:10px 16px;box-shadow:0 2px 10px rgba(0,0,0,0.4);">
       <h1 style="margin:0;font-size:20px;letter-spacing:1px;">MONSTRUITOS</h1>
       <button id="restartBtnTop" style="background:#2563eb;color:white;border:none;padding:8px 12px;border-radius:8px;cursor:pointer;">Reiniciar partida</button>
     </header>
+
     <div style="height:60px;"></div> <!-- separador para evitar que el header tape el contenido -->
+
     <header style="display:flex;justify-content:space-between;align-items:center">
-            <div><span id="infoTurn">Cargando...</span> <span id="timer">120</span></div>
+      <div><span id="infoTurn">Cargando...</span> <span id="timer">120</span></div>
       <div><button id="restartBtn">Reiniciar partida</button></div>
     </header>
 
+    <!-- Aquí viene todo tu contenido del juego -->
+    <div id="p1Creaturas"> ... </div>
+    <div id="board"> ... </div>
+    <div id="p2Creaturas"> ... </div>
+
+    <!-- ⬆️ CERRAMOS el contenedor escalable al FINAL del juego -->
+  </div>
+  </div>
     <div id="gameArea" style="margin-top:12px">
       <div class="panel" id="leftPanel">
         <div style="display:flex;justify-content:space-between;align-items:center">
