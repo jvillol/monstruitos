@@ -473,6 +473,14 @@ body {
   opacity: 0 !important;
   visibility: hidden !important;
 }
+.flash-blue {
+  animation: flashBlue 0.25s ease-in-out 2;
+}
+
+@keyframes flashBlue {
+  0%, 100% { box-shadow: 0 0 0px #3b82f6; transform: scale(1); }
+  50% { box-shadow: 0 0 20px #3b82f6; transform: scale(1.1); }
+}
 
 </style>
 </head>
@@ -654,7 +662,7 @@ cryon: (attacker, target, ctx) => {
   const owner = ctx.ownerIndex;
   const counts = {};
 
-  // recolectar todas las posiciones que NO sean ya 'agua' y no sean null
+  // Recolectar todas las posiciones que NO sean ya 'agua' y no sean null
   const candidates = [];
   for (let y = 0; y < ROWS; y++) {
     for (let x = 0; x < COLS; x++) {
@@ -664,7 +672,7 @@ cryon: (attacker, target, ctx) => {
   }
 
   if (candidates.length > 0) {
-    // barajar (Fisher-Yates)
+    // Barajar (Fisher-Yates)
     for (let i = candidates.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       const tmp = candidates[i];
@@ -672,19 +680,34 @@ cryon: (attacker, target, ctx) => {
       candidates[j] = tmp;
     }
 
-    // convertir hasta 3 posiciones únicas
+    // Convertir hasta 3 posiciones únicas
     const toConvert = Math.min(3, candidates.length);
+    const converted = [];
+
     for (let i = 0; i < toConvert; i++) {
       const pos = candidates[i];
       const oldTile = board[pos.y][pos.x];
 
       if (oldTile && oldTile !== 'agua') {
         counts[oldTile] = (counts[oldTile] || 0) + 1;
+        converted.push(pos);
       }
-
-      // convertir la ficha a agua
-      board[pos.y][pos.x] = 'agua';
     }
+
+    // Aplicar efecto visual antes de convertirlas
+    converted.forEach(pos => {
+      const cellEl = document.getElementById(`cell-${pos.y}-${pos.x}`);
+      if (cellEl) {
+        cellEl.classList.add('flash-blue');
+        setTimeout(() => {
+          cellEl.classList.remove('flash-blue');
+          board[pos.y][pos.x] = 'agua';
+          render();
+        }, 250); // medio segundo de parpadeo
+      } else {
+        board[pos.y][pos.x] = 'agua';
+      }
+    });
 
     // Dar energía según las fichas convertidas
     Object.keys(counts).forEach(color => {
@@ -693,8 +716,10 @@ cryon: (attacker, target, ctx) => {
     });
   }
 
-  render();
-  ctx.onComplete();
+  setTimeout(() => {
+    render();
+    ctx.onComplete();
+  }, 300);
 },
 
     ignarok: (attacker,target,ctx) => {
