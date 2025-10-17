@@ -207,10 +207,9 @@
   50% { transform: scaleX(1.05); opacity: 0.85; }
 }
 
-/* ----- 📱 MODO VERTICAL MÓVIL (CORREGIDO: 2 arriba a la izq, 2 arriba a la dcha, tablero debajo centrado) ----- */
+/* ----- 📱 MODO VERTICAL MÓVIL (AJUSTADO: cartas más pequeñas y horizontales) ----- */
 @media (max-width: 768px) and (orientation: portrait) {
 
-  /* Contenedor general: grid para fila superior (left / right) y tablero en la fila 2 */
   #gameScreen {
     display: flex !important;
     flex-direction: column;
@@ -223,142 +222,142 @@
     overflow-x: hidden;
   }
 
-  /* Grid: columna izquierda + columna derecha encima del tablero */
   #gameArea {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto 1fr;
-    gap: 12px;
+    grid-template-columns: 1fr 1fr; /* dos columnas (izq y dcha) */
+    grid-template-rows: auto 1fr;   /* fila 1: paneles / fila 2: tablero */
+    gap: 10px;
     width: 100%;
-    max-width: 720px; /* controla el ancho total como en la referencia */
+    max-width: 720px;
     box-sizing: border-box;
     align-items: start;
   }
 
-  /* Panels: cada panel ocupa su columna en la fila 1 */
-  #leftPanel {
-    grid-column: 1 / 2;
-    grid-row: 1;
+  /* Paneles arriba */
+  #leftPanel, #rightPanel {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 10px;
-    padding: 6px;
+    justify-content: flex-start;
+    gap: 8px;
     background: transparent;
-    box-sizing: border-box;
-    justify-self: center;
+    padding: 4px;
     width: 100%;
-    max-width: 340px;
+    box-sizing: border-box;
   }
 
-  #rightPanel {
-    grid-column: 2 / 3;
-    grid-row: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 10px;
-    padding: 6px;
-    background: transparent;
-    box-sizing: border-box;
-    justify-self: center;
-    width: 100%;
-    max-width: 340px;
-  }
+  #leftPanel { grid-column: 1 / 2; grid-row: 1; }
+  #rightPanel { grid-column: 2 / 3; grid-row: 1; }
 
-  /* Aseguramos que las cartas estén apiladas verticalmente dentro de cada panel */
+  /* Contenedores de criaturas */
   #p1Creaturas, #p2Creaturas {
     display: flex;
     flex-direction: column;
-    gap: 12px;
     align-items: center;
     justify-content: flex-start;
+    gap: 8px;
     background: #071233;
-    padding: 10px;
-    border-radius: 12px;
-    width: 100%;
-    box-sizing: border-box;
+    padding: 6px;
+    border-radius: 10px;
+    width: 95%;
   }
 
-  /* Cartas / tarjetas compactas (tamaño reducido como en la foto) */
-  .creature-card, .creature {
-    width: 100%;
-    max-width: 180px;   /* ancho de la tarjeta */
-    padding: 8px;
-    margin: 0 auto;
-    box-sizing: border-box;
-  }
-
+  /* 🔹 Cartas más pequeñas y más horizontales */
   .creature {
     display: flex;
-    gap: 10px;
     align-items: center;
-    padding: 8px;
-    width: 170px;
+    justify-content: flex-start;
+    gap: 6px;
+    background: rgba(255,255,255,0.03);
     border-radius: 10px;
-    background: rgba(255,255,255,0.02);
+    width: 140px;      /* más ancha */
+    height: 72px;      /* más baja */
+    padding: 6px;
+    box-sizing: border-box;
   }
 
-  .creature img, .creature-card img {
-    width: 64px;
-    height: 64px;
+  .creature img {
+    width: 46px;
+    height: 46px;
+    border-radius: 6px;
     object-fit: contain;
-    border-radius: 8px;
   }
 
-  .creaInfo { font-size: 0.80rem; min-width: 0; }
-  .bar { height: 10px; }
-  .bar-text { font-size: 0.70rem; }
+  .creaInfo {
+    flex: 1;
+    font-size: 0.7rem;
+    line-height: 1.1;
+  }
+
+  .creaInfo .name {
+    font-size: 0.75rem;
+    margin-bottom: 2px;
+  }
+
+  .bar {
+    height: 8px;
+    margin-top: 2px;
+  }
+
+  .bar-text {
+    font-size: 0.6rem;
+  }
 
   button.btn {
-    font-size: 0.74rem;
-    padding: 6px 8px;
+    font-size: 0.65rem;
+    padding: 2px 5px;
+    margin-top: 2px;
   }
 
-  #p1Name, #p2Name { font-size: 0.95rem; margin-bottom: 6px; }
+  /* Nombre de jugador */
+  #p1Name, #p2Name {
+    font-size: 0.85rem;
+    margin-bottom: 4px;
+  }
 
-  /* ---------------- Tablero: fila 2 (debajo de los paneles), centrado y cuadrado ---------------- */
+  /* Tablero debajo */
   #boardPanel {
-    grid-column: 1 / -1;       /* ocupa ambas columnas */
+    grid-column: 1 / -1;
     grid-row: 2;
     display: flex;
     justify-content: center;
     align-items: center;
     width: 100%;
     box-sizing: border-box;
-    padding-top: 4px;
     margin-top: 4px;
   }
 
   #board {
-    width: 92vw;
-    max-width: 440px;          /* ajustable, deja el tablero grande como en la referencia */
+    width: 90vw;
+    max-width: 420px;
     aspect-ratio: 1 / 1;
     display: grid;
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(8, 1fr);
-    gap: 6px;
-    margin: 0 auto 18px;
-    box-sizing: border-box;
+    gap: 4px;
   }
 
   .cell {
-    border-radius: 8px;
-    font-size: 0.9rem;
-    width: 100%;
-    height: 100%;
-    display:flex;
-    align-items:center;
-    justify-content:center;
+    border-radius: 6px;
+    font-size: 0.85rem;
   }
 
-  /* Ajustes finos para pantallas muy estrechas */
+  /* Pantallas muy pequeñas */
   @media (max-width: 380px) {
-    .creature { width: 150px; }
-    .creature img { width: 56px; height:56px; }
-    #board { gap: 4px; max-width: 360px; }
+    .creature {
+      width: 120px;
+      height: 66px;
+      gap: 4px;
+    }
+    .creature img {
+      width: 40px;
+      height: 40px;
+    }
+    #board {
+      max-width: 360px;
+      gap: 3px;
+    }
   }
-
 }
 
 
