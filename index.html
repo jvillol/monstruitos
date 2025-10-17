@@ -207,118 +207,132 @@
   50% { transform: scaleX(1.05); opacity: 0.85; }
 }
 
-/* ----- 📱 MODO VERTICAL MÓVIL (AJUSTADO: 2 cartas izquierda, 2 cartas derecha, tablero abajo) ----- */
+/* ----- 📱 MODO VERTICAL MÓVIL (CORREGIDO: 2 arriba a la izq, 2 arriba a la dcha, tablero debajo centrado) ----- */
 @media (max-width: 768px) and (orientation: portrait) {
-  /* Contenedor principal: columna para poder situar paneles arriba y tablero abajo */
+
+  /* Contenedor general: grid para fila superior (left / right) y tablero en la fila 2 */
   #gameScreen {
     display: flex !important;
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    height: 100vh;
-    padding: 6px;
+    padding: 8px;
     gap: 8px;
+    height: 100vh;
     box-sizing: border-box;
     overflow-x: hidden;
   }
 
-  /* Mantener un ancho máximo razonable como en la referencia */
+  /* Grid: columna izquierda + columna derecha encima del tablero */
   #gameArea {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto 1fr;
+    gap: 12px;
     width: 100%;
-    max-width: 720px;
-    display: block; /* usaremos floats para colocar los paneles a ambos lados */
-    position: relative;
+    max-width: 720px; /* controla el ancho total como en la referencia */
     box-sizing: border-box;
-    padding: 0 6px;
+    align-items: start;
   }
 
-  /* Paneles (izq + dcha) estilo tarjeta, flotados para quedar en una fila encima del tablero */
-  #leftPanel, #rightPanel {
-    width: 46%;
-    box-sizing: border-box;
+  /* Panels: cada panel ocupa su columna en la fila 1 */
+  #leftPanel {
+    grid-column: 1 / 2;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 6px;
     background: transparent;
-    padding: 6px 4px;
-    margin: 0;
-    float: left; /* ambos flotan; veremos después cómo separar izquierda/derecha */
-    border-radius: 10px;
+    box-sizing: border-box;
+    justify-self: center;
+    width: 100%;
+    max-width: 340px;
   }
 
-  /* Forzar uno a la derecha */
-  #leftPanel { float: left; }
-  #rightPanel { float: right; }
+  #rightPanel {
+    grid-column: 2 / 3;
+    grid-row: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 6px;
+    background: transparent;
+    box-sizing: border-box;
+    justify-self: center;
+    width: 100%;
+    max-width: 340px;
+  }
 
-  /* Paneles internos de criaturas como columna vertical (apilar las 2 cartas) */
+  /* Aseguramos que las cartas estén apiladas verticalmente dentro de cada panel */
   #p1Creaturas, #p2Creaturas {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 12px;
     align-items: center;
     justify-content: flex-start;
     background: #071233;
     padding: 10px;
     border-radius: 12px;
-    min-height: auto;
+    width: 100%;
+    box-sizing: border-box;
   }
 
-  /* Ajuste del tamaño de las cartas/criaturas: más compactas */
+  /* Cartas / tarjetas compactas (tamaño reducido como en la foto) */
   .creature-card, .creature {
     width: 100%;
-    max-width: 160px; /* tarjetas compactas como en la foto */
-    min-height: auto;
+    max-width: 180px;   /* ancho de la tarjeta */
     padding: 8px;
     margin: 0 auto;
+    box-sizing: border-box;
   }
 
   .creature {
-    display:flex;
-    gap:8px;
-    align-items:center;
-    padding:8px;
-    width: 150px;
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 8px;
+    width: 170px;
     border-radius: 10px;
     background: rgba(255,255,255,0.02);
   }
 
   .creature img, .creature-card img {
-    width: 60px;
-    height: 60px;
+    width: 64px;
+    height: 64px;
     object-fit: contain;
     border-radius: 8px;
   }
 
-  .creaInfo { font-size: 0.78rem; min-width: 0; }
-
+  .creaInfo { font-size: 0.80rem; min-width: 0; }
   .bar { height: 10px; }
-  .bar-text { font-size: 0.68rem; }
+  .bar-text { font-size: 0.70rem; }
 
   button.btn {
-    font-size: 0.72rem;
+    font-size: 0.74rem;
     padding: 6px 8px;
   }
 
-  /* Aseguramos que los encabezados de jugador sean pequeños y alineados */
-  #p1Name, #p2Name {
-    font-size: 0.92rem;
-    margin-bottom: 6px;
-  }
+  #p1Name, #p2Name { font-size: 0.95rem; margin-bottom: 6px; }
 
-  /* ---------------- Tablero: debe quedar debajo, centrado y cuadrado ---------------- */
-  /* Limpiar floats para que el tablero baje por debajo de los paneles */
+  /* ---------------- Tablero: fila 2 (debajo de los paneles), centrado y cuadrado ---------------- */
   #boardPanel {
-    clear: both;
-    width: 100%;
+    grid-column: 1 / -1;       /* ocupa ambas columnas */
+    grid-row: 2;
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-top: 12px;
+    width: 100%;
     box-sizing: border-box;
-    order: 3;
+    padding-top: 4px;
+    margin-top: 4px;
   }
 
-  /* tablero cuadrado y centrado (anchura basada en viewport para parecer igual que imagen) */
   #board {
     width: 92vw;
-    max-width: 420px;
+    max-width: 440px;          /* ajustable, deja el tablero grande como en la referencia */
     aspect-ratio: 1 / 1;
     display: grid;
     grid-template-columns: repeat(8, 1fr);
@@ -338,19 +352,13 @@
     justify-content:center;
   }
 
-  /* Ajustes visuales menores */
-  #bubble { font-size: 0.78rem; margin-top: 6px; }
-  #timer { font-size: 1rem; }
-
-  /* Evitamos scroll horizontal y redundancias */
-  body, html { overflow-x: hidden; }
-
-  /* Si la pantalla es muy estrecha, reducimos aún más las cartas para mantener el layout */
-  @media (max-width: 360px) {
-    .creature { width: 130px; }
-    .creature img { width: 52px; height:52px; }
+  /* Ajustes finos para pantallas muy estrechas */
+  @media (max-width: 380px) {
+    .creature { width: 150px; }
+    .creature img { width: 56px; height:56px; }
     #board { gap: 4px; max-width: 360px; }
   }
+
 }
 
 
