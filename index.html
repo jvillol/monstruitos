@@ -207,7 +207,7 @@
   50% { transform: scaleX(1.05); opacity: 0.85; }
 }
 
-/* ----- 📱 MODO VERTICAL MÓVIL (AJUSTADO: cartas más pequeñas y horizontales) ----- */
+/* ----- 📱 MODO VERTICAL MÓVIL (ULTRA COMPACTO: sin scroll) ----- */
 @media (max-width: 768px) and (orientation: portrait) {
 
   #gameScreen {
@@ -215,18 +215,18 @@
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    padding: 8px;
-    gap: 8px;
+    padding: 4px;
+    gap: 4px;
     height: 100vh;
     box-sizing: border-box;
-    overflow-x: hidden;
+    overflow: hidden;
   }
 
   #gameArea {
     display: grid;
-    grid-template-columns: 1fr 1fr; /* dos columnas (izq y dcha) */
-    grid-template-rows: auto 1fr;   /* fila 1: paneles / fila 2: tablero */
-    gap: 10px;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto 1fr;
+    gap: 4px;
     width: 100%;
     max-width: 720px;
     box-sizing: border-box;
@@ -239,9 +239,9 @@
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    gap: 8px;
+    gap: 4px;
     background: transparent;
-    padding: 4px;
+    padding: 2px;
     width: 100%;
     box-sizing: border-box;
   }
@@ -249,70 +249,68 @@
   #leftPanel { grid-column: 1 / 2; grid-row: 1; }
   #rightPanel { grid-column: 2 / 3; grid-row: 1; }
 
-  /* Contenedores de criaturas */
   #p1Creaturas, #p2Creaturas {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    gap: 8px;
+    gap: 6px;
     background: #071233;
-    padding: 6px;
-    border-radius: 10px;
+    padding: 4px;
+    border-radius: 8px;
     width: 95%;
   }
 
-  /* 🔹 Cartas más pequeñas y más horizontales */
+  /* 🔹 Cartas pequeñas y horizontales (versión mini) */
   .creature {
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    gap: 6px;
-    background: rgba(255,255,255,0.03);
-    border-radius: 10px;
-    width: 140px;      /* más ancha */
-    height: 72px;      /* más baja */
-    padding: 6px;
+    gap: 4px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 8px;
+    width: 115px;
+    height: 58px;
+    padding: 4px;
     box-sizing: border-box;
   }
 
   .creature img {
-    width: 46px;
-    height: 46px;
+    width: 36px;
+    height: 36px;
     border-radius: 6px;
     object-fit: contain;
   }
 
   .creaInfo {
     flex: 1;
-    font-size: 0.7rem;
-    line-height: 1.1;
+    font-size: 0.6rem;
+    line-height: 1;
   }
 
   .creaInfo .name {
-    font-size: 0.75rem;
-    margin-bottom: 2px;
+    font-size: 0.65rem;
+    margin-bottom: 1px;
   }
 
   .bar {
-    height: 8px;
-    margin-top: 2px;
+    height: 6px;
+    margin-top: 1px;
   }
 
   .bar-text {
-    font-size: 0.6rem;
+    font-size: 0.55rem;
   }
 
   button.btn {
-    font-size: 0.65rem;
-    padding: 2px 5px;
-    margin-top: 2px;
+    font-size: 0.55rem;
+    padding: 2px 4px;
+    margin-top: 1px;
   }
 
-  /* Nombre de jugador */
   #p1Name, #p2Name {
-    font-size: 0.85rem;
-    margin-bottom: 4px;
+    font-size: 0.75rem;
+    margin-bottom: 2px;
   }
 
   /* Tablero debajo */
@@ -324,38 +322,37 @@
     align-items: center;
     width: 100%;
     box-sizing: border-box;
-    margin-top: 4px;
+    margin-top: 2px;
   }
 
   #board {
     width: 90vw;
-    max-width: 420px;
+    max-width: 400px;
     aspect-ratio: 1 / 1;
     display: grid;
     grid-template-columns: repeat(8, 1fr);
     grid-template-rows: repeat(8, 1fr);
-    gap: 4px;
+    gap: 3px;
   }
 
   .cell {
-    border-radius: 6px;
-    font-size: 0.85rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
   }
 
-  /* Pantallas muy pequeñas */
+  /* Pantallas muy pequeñas (320–360px) */
   @media (max-width: 380px) {
     .creature {
-      width: 120px;
-      height: 66px;
-      gap: 4px;
+      width: 100px;
+      height: 52px;
     }
     .creature img {
-      width: 40px;
-      height: 40px;
+      width: 32px;
+      height: 32px;
     }
     #board {
-      max-width: 360px;
-      gap: 3px;
+      max-width: 340px;
+      gap: 2px;
     }
   }
 }
