@@ -207,56 +207,56 @@
   50% { transform: scaleX(1.05); opacity: 0.85; }
 }
 
-/* ----- 📱 MODO VERTICAL (por debajo de 768px de ancho) ----- */
+/* ----- 📱 NUEVO MODO VERTICAL (vista móvil exacta como la referencia) ----- */
 @media (max-width: 768px) and (orientation: portrait) {
   #gameScreen {
-    display: flex;
+    display: flex !important;
     flex-direction: column;
-    justify-content: flex-start; /* tablero más arriba */
     align-items: center;
+    justify-content: flex-start;
     height: 100vh;
     overflow: hidden;
-    padding: 4px;
+    padding: 6px;
+    gap: 6px;
     box-sizing: border-box;
-    gap: 4px;
   }
 
-  /* Tablero más compacto y centrado mejor */
-  #board {
-    width: 85vw;
-    height: 85vw;
-    margin: 4px 0;
+  /* 🔹 Paneles de jugadores arriba (dos columnas) */
+  #gameArea {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    width: 100%;
+    max-width: 640px;
+    gap: 8px;
+  }
+
+  #leftPanel, #rightPanel {
     display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    grid-template-rows: repeat(8, 1fr);
-    gap: 2px;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    width: 100%;
+    background: transparent;
+    padding: 0;
   }
 
-  /* Ajustar criaturas para que quepan todas */
+  /* 🔹 Cada jugador ocupa una columna (Jesús - izquierda, Silvia - derecha) */
   #p1Creaturas, #p2Creaturas {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 4px;
-    padding: 2px;
-    width: 100%;
+    gap: 8px;
+    background: #071233;
+    border-radius: 10px;
+    padding: 8px;
   }
 
-  #p1Creaturas {
-    margin-bottom: 2px;
-  }
-
-  #p2Creaturas {
-    margin-top: auto;
-    margin-bottom: 4px;
-  }
-
+  /* 🔹 Criaturas más pequeñas pero legibles */
   .creature {
-    transform: scale(0.7);
-    transform-origin: center;
-    margin: 2px;
-    width: 110px;
+    transform: none;
+    width: 150px;
+    margin: 4px auto;
   }
 
   .creature img {
@@ -265,50 +265,60 @@
     object-fit: contain;
   }
 
-  .cell {
-    font-size: 0.9rem;
-    border-radius: 4px;
-  }
-
-  /* Criaturas arriba y abajo */
-  #p1Creaturas, #p2Creaturas {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 4px;
-    padding: 4px;
-    width: 100%;
-  }
-
-  .creature {
-    transform: scale(0.75);
-    transform-origin: center;
-    margin: 2px;
-    width: 120px;
-  }
-
-  .creature img {
-    width: 70px;
-    height: 70px;
-    object-fit: contain;
-  }
-
   .creaInfo {
-    font-size: 0.75rem;
+    font-size: 0.8rem;
   }
 
   .bar {
-    height: 8px;
+    height: 10px;
   }
 
   .bar-text {
-    font-size: 0.65rem;
+    font-size: 0.7rem;
   }
 
   button.btn {
-    font-size: 0.7rem;
-    padding: 3px 6px;
+    font-size: 0.75rem;
+    padding: 4px 8px;
+  }
+
+  /* 🔹 Tablero debajo, centrado */
+  #boardPanel {
+    order: 3;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  #board {
+    width: 92vw;
+    max-width: 420px;
+    aspect-ratio: 1 / 1;
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    gap: 2px;
+    margin-top: 6px;
+  }
+
+  .cell {
+    border-radius: 6px;
+    font-size: 0.9rem;
+  }
+
+  /* 🔹 Ajustes menores */
+  #p1Name, #p2Name {
+    font-size: 0.9rem;
+  }
+
+  #timer {
+    font-size: 1rem;
+  }
+
+  #bubble {
+    margin-top: 4px;
+    font-size: 0.8rem;
   }
 }
 
