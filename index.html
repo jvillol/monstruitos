@@ -207,7 +207,7 @@
   50% { transform: scaleX(1.05); opacity: 0.85; }
 }
 
-/* ----- 📱 MODO VERTICAL MÓVIL (ULTRA COMPACTO: sin scroll) ----- */
+/* ----- 📱 MODO VERTICAL MÓVIL (CARTAS FIJAS + BOTONES EN FILA) ----- */
 @media (max-width: 768px) and (orientation: portrait) {
 
   #gameScreen {
@@ -215,8 +215,8 @@
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    padding: 4px;
-    gap: 4px;
+    padding: 6px;
+    gap: 6px;
     height: 100vh;
     box-sizing: border-box;
     overflow: hidden;
@@ -224,24 +224,23 @@
 
   #gameArea {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    grid-template-rows: auto 1fr;
-    gap: 4px;
+    grid-template-columns: 1fr 1fr; /* dos columnas */
+    grid-template-rows: auto 1fr;   /* fila 1: paneles / fila 2: tablero */
+    gap: 6px;
     width: 100%;
     max-width: 720px;
     box-sizing: border-box;
     align-items: start;
   }
 
-  /* Paneles arriba */
+  /* Paneles de jugadores (izq / dcha) */
   #leftPanel, #rightPanel {
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    gap: 4px;
+    gap: 8px;
     background: transparent;
-    padding: 2px;
     width: 100%;
     box-sizing: border-box;
   }
@@ -249,72 +248,78 @@
   #leftPanel { grid-column: 1 / 2; grid-row: 1; }
   #rightPanel { grid-column: 2 / 3; grid-row: 1; }
 
+  /* Contenedor de criaturas */
   #p1Creaturas, #p2Creaturas {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 12px; /* 🔹 más espacio entre cartas */
-  background: #071233;
-  padding: 6px 4px;
-  border-radius: 8px;
-  width: 95%;
-  box-sizing: border-box;
-}
-
-  /* 🔹 Cartas pequeñas y horizontales (versión mini) */
-  .creature {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: flex-start;
-    gap: 4px;
-    background: rgba(255,255,255,0.04);
-    border-radius: 8px;
-    width: 115px;
-    height: 58px;
-    padding: 4px;
+    gap: 12px; /* separación entre cartas */
+    background: #071233;
+    padding: 6px;
+    border-radius: 10px;
+    width: 95%;
+  }
+
+  /* ----- CARTAS DE CRIATURAS ----- */
+  .creature {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255,255,255,0.03);
+    border-radius: 10px;
+    width: 130px;
+    padding: 6px;
     box-sizing: border-box;
   }
 
   .creature img {
-    width: 36px;
-    height: 36px;
+    width: 48px;
+    height: 48px;
     border-radius: 6px;
     object-fit: contain;
+    margin-bottom: 4px;
   }
 
   .creaInfo {
-    flex: 1;
-    font-size: 0.6rem;
-    line-height: 1;
-  }
-
-  .creaInfo .name {
-    font-size: 0.65rem;
-    margin-bottom: 1px;
+    font-size: 0.68rem;
+    text-align: center;
+    line-height: 1.1;
+    margin-bottom: 4px;
   }
 
   .bar {
     height: 6px;
-    margin-top: 1px;
+    margin: 2px 0;
   }
 
   .bar-text {
     font-size: 0.55rem;
   }
 
-  button.btn {
-    font-size: 0.55rem;
-    padding: 2px 4px;
-    margin-top: 1px;
+  /* Botones Atacar y Evolucionar EN FILA */
+  .creature-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    margin-top: 4px;
+  }
+
+  .creature-buttons button {
+    font-size: 0.6rem;
+    padding: 3px 6px;
+    flex: 1;
   }
 
   #p1Name, #p2Name {
-    font-size: 0.75rem;
-    margin-bottom: 2px;
+    font-size: 0.85rem;
+    margin-bottom: 4px;
   }
 
-  /* Tablero debajo */
+  /* ----- TABLERO ----- */
   #boardPanel {
     grid-column: 1 / -1;
     grid-row: 2;
@@ -323,7 +328,6 @@
     align-items: center;
     width: 100%;
     box-sizing: border-box;
-    margin-top: 2px;
   }
 
   #board {
@@ -341,20 +345,11 @@
     font-size: 0.8rem;
   }
 
-  /* Pantallas muy pequeñas (320–360px) */
+  /* Pantallas muy pequeñas */
   @media (max-width: 380px) {
-    .creature {
-      width: 100px;
-      height: 52px;
-    }
-    .creature img {
-      width: 32px;
-      height: 32px;
-    }
-    #board {
-      max-width: 340px;
-      gap: 2px;
-    }
+    .creature { width: 115px; }
+    .creature img { width: 42px; height: 42px; }
+    #board { max-width: 340px; }
   }
 }
 
@@ -527,6 +522,42 @@ body {
 @keyframes flashBlue {
   0%, 100% { box-shadow: 0 0 0px #3b82f6; transform: scale(1); }
   50% { box-shadow: 0 0 20px #3b82f6; transform: scale(1.1); }
+}
+/* === Ajuste visual cartas criaturas (modo móvil) === */
+.creature {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.03);
+  border-radius: 10px;
+  padding: 6px;
+  margin-bottom: 12px; /* separación entre cartas */
+  width: 140px; /* más compactas */
+  max-width: 42vw; /* responsive */
+  box-shadow: 0 0 4px rgba(255, 255, 255, 0.05);
+}
+
+.creature img {
+  width: 60px;
+  height: 60px;
+  border-radius: 8px;
+  object-fit: cover;
+  margin-bottom: 4px;
+}
+
+.controls {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: nowrap; /* botones en una sola línea */
+  margin-top: 6px;
+}
+
+.controls button {
+  flex: 1;
+  min-width: 60px;
+  font-size: 13px;
+  padding: 4px 6px;
 }
 
 </style>
