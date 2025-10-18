@@ -207,110 +207,152 @@
   50% { transform: scaleX(1.05); opacity: 0.85; }
 }
 
-/* ----- 📱 MODO VERTICAL (por debajo de 768px de ancho) ----- */
+/* ----- 📱 MODO VERTICAL MÓVIL (CARTAS FIJAS + BOTONES EN FILA) ----- */
 @media (max-width: 768px) and (orientation: portrait) {
+
   #gameScreen {
+    display: flex !important;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding: 6px;
+    gap: 6px;
+    height: 100vh;
+    box-sizing: border-box;
+    overflow: hidden;
+  }
+
+  #gameArea {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* dos columnas */
+    grid-template-rows: auto 1fr;   /* fila 1: paneles / fila 2: tablero */
+    gap: 6px;
+    width: 100%;
+    max-width: 720px;
+    box-sizing: border-box;
+    align-items: start;
+  }
+
+  /* Paneles de jugadores (izq / dcha) */
+  #leftPanel, #rightPanel {
     display: flex;
     flex-direction: column;
-    justify-content: flex-start; /* tablero más arriba */
     align-items: center;
-    height: 100vh;
-    overflow: hidden;
-    padding: 4px;
+    justify-content: flex-start;
+    gap: 8px;
+    background: transparent;
+    width: 100%;
     box-sizing: border-box;
-    gap: 4px;
   }
 
-  /* Tablero más compacto y centrado mejor */
-  #board {
-    width: 85vw;
-    height: 85vw;
-    margin: 4px 0;
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    grid-template-rows: repeat(8, 1fr);
-    gap: 2px;
-  }
+  #leftPanel { grid-column: 1 / 2; grid-row: 1; }
+  #rightPanel { grid-column: 2 / 3; grid-row: 1; }
 
-  /* Ajustar criaturas para que quepan todas */
+  /* Contenedor de criaturas */
   #p1Creaturas, #p2Creaturas {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 4px;
-    padding: 2px;
-    width: 100%;
+    justify-content: flex-start;
+    gap: 12px; /* separación entre cartas */
+    background: #071233;
+    padding: 6px;
+    border-radius: 10px;
+    width: 95%;
   }
 
-  #p1Creaturas {
-    margin-bottom: 2px;
+  /* ----- CARTAS DE CRIATURAS ----- */
+  .creature {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    background: rgba(255,255,255,0.03);
+    border-radius: 10px;
+    width: 130px;
+    padding: 6px;
+    box-sizing: border-box;
   }
 
-  #p2Creaturas {
-    margin-top: auto;
+  .creature img {
+    width: 48px;
+    height: 48px;
+    border-radius: 6px;
+    object-fit: contain;
     margin-bottom: 4px;
   }
 
-  .creature {
-    transform: scale(0.7);
-    transform-origin: center;
-    margin: 2px;
-    width: 110px;
-  }
-
-  .creature img {
-    width: 65px;
-    height: 65px;
-    object-fit: contain;
-  }
-
-  .cell {
-    font-size: 0.9rem;
-    border-radius: 4px;
-  }
-
-  /* Criaturas arriba y abajo */
-  #p1Creaturas, #p2Creaturas {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 4px;
-    padding: 4px;
-    width: 100%;
-  }
-
-  .creature {
-    transform: scale(0.75);
-    transform-origin: center;
-    margin: 2px;
-    width: 120px;
-  }
-
-  .creature img {
-    width: 70px;
-    height: 70px;
-    object-fit: contain;
-  }
-
   .creaInfo {
-    font-size: 0.75rem;
+    font-size: 0.68rem;
+    text-align: center;
+    line-height: 1.1;
+    margin-bottom: 4px;
   }
 
   .bar {
-    height: 8px;
+    height: 6px;
+    margin: 2px 0;
   }
 
   .bar-text {
-    font-size: 0.65rem;
+    font-size: 0.55rem;
   }
 
-  button.btn {
-    font-size: 0.7rem;
+  /* Botones Atacar y Evolucionar EN FILA */
+  .creature-buttons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    width: 100%;
+    margin-top: 4px;
+  }
+
+  .creature-buttons button {
+    font-size: 0.6rem;
     padding: 3px 6px;
+    flex: 1;
+  }
+
+  #p1Name, #p2Name {
+    font-size: 0.85rem;
+    margin-bottom: 4px;
+  }
+
+  /* ----- TABLERO ----- */
+  #boardPanel {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  #board {
+    width: 90vw;
+    max-width: 400px;
+    aspect-ratio: 1 / 1;
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    grid-template-rows: repeat(8, 1fr);
+    gap: 3px;
+  }
+
+  .cell {
+    border-radius: 4px;
+    font-size: 0.8rem;
+  }
+
+  /* Pantallas muy pequeñas */
+  @media (max-width: 380px) {
+    .creature { width: 115px; }
+    .creature img { width: 42px; height: 42px; }
+    #board { max-width: 340px; }
   }
 }
+
 
 /* ----- 📲 MODO HORIZONTAL (apaisado) ----- */
 @media (max-width: 1024px) and (orientation: landscape) {
@@ -481,9 +523,7 @@ body {
   0%, 100% { box-shadow: 0 0 0px #3b82f6; transform: scale(1); }
   50% { box-shadow: 0 0 20px #3b82f6; transform: scale(1.1); }
 }
-
-
-/* === Ajuste visual cartas criaturas (modo móvil mejorado) === */
+/* === Ajuste visual cartas criaturas (modo móvil) === */
 .creature {
   display: flex;
   flex-direction: column;
@@ -491,9 +531,9 @@ body {
   background: rgba(255, 255, 255, 0.03);
   border-radius: 10px;
   padding: 6px;
-  margin-bottom: 12px;
-  width: 140px;
-  max-width: 42vw;
+  margin-bottom: 12px; /* separación entre cartas */
+  width: 140px; /* más compactas */
+  max-width: 42vw; /* responsive */
   box-shadow: 0 0 4px rgba(255, 255, 255, 0.05);
 }
 
@@ -509,7 +549,7 @@ body {
   display: flex;
   justify-content: center;
   gap: 6px;
-  flex-wrap: nowrap;
+  flex-wrap: nowrap; /* botones en una sola línea */
   margin-top: 6px;
 }
 
@@ -518,49 +558,6 @@ body {
   min-width: 60px;
   font-size: 13px;
   padding: 4px 6px;
-}
-
-/* === Ajuste de escala general (para que entre todo sin scroll) === */
-@media (max-width: 768px) and (orientation: portrait) {
-  #gameScreen {
-    transform: scale(0.94);
-    transform-origin: top center;
-    height: 100vh;
-    overflow: hidden;
-  }
-
-  #leftPanel, #rightPanel {
-    gap: 4px;
-  }
-
-  #p1Name, #p2Name {
-    font-size: 0.8rem;
-    margin-bottom: 2px;
-  }
-
-  .creature {
-    width: 125px;
-    padding: 4px;
-  }
-
-  .creature img {
-    width: 52px;
-    height: 52px;
-  }
-
-  .creaInfo {
-    font-size: 0.65rem;
-  }
-
-  .controls button {
-    font-size: 12px;
-    padding: 3px 5px;
-  }
-
-  #board {
-    width: 86vw;
-    max-width: 380px;
-  }
 }
 
 </style>
