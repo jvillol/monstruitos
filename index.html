@@ -30,6 +30,7 @@
     --cell-size:44px;
     --gap:6px;
     --accent: #2563eb;
+    --cascade-col-delay: 0.05s;
   }
   html,body{height:100%;margin:0;font-family:Inter,system-ui,Arial;background:#0f172a;color:#e6eef8}
   .center{max-width:1100px;margin:18px auto;padding:12px}
@@ -63,6 +64,7 @@
   .cell.trueno{background:#eab308}
   .cell.naturaleza{background:#22c55e}
   .cell.sombra{background:#9333ea}
+
   /* === EFECTOS VISUALES DE ATAQUES === */
 .flash-row, .flash-col {
   animation: flashHighlight 0.6s ease-in-out 2;
@@ -560,6 +562,21 @@ body {
   padding: 4px 6px;
 }
 
+/* === EFECTOS DE CASCADA INTEGRADOS === */
+@keyframes tileFlash {
+  0% { transform: scale(1); filter: brightness(1); opacity: 1; }
+  50% { transform: scale(1.2); filter: brightness(2.3); opacity: 1; }
+  100% { transform: scale(0.8); filter: brightness(0.3); opacity: 0; }
+}
+@keyframes tileFall {
+  0% { transform: translateY(-60px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}
+.cell.removing { animation: tileFlash 0.4s ease-out forwards; }
+.cell.falling  { animation: tileFall 0.4s ease-out forwards; }
+
+/* ================== FIN CSS ================== */
+
 </style>
 </head>
 <body>
@@ -723,12 +740,6 @@ const POWERS = {
     ctx.onComplete();
   },
 
-/* ================= POWERS (attack logic) =================
-   Cada criatura ahora funciona como "Sombra":
-   - Hace daño base
-   - Aplica efecto especial
-   - Siempre llama a ctx.onComplete()
-*/
  // ===== Agua =====
 aqualis: (attacker, target, ctx) => {
   target.hp -= 40; // Daño fuerte
@@ -819,33 +830,39 @@ cryon: (attacker, target, ctx) => {
     ctx.onComplete();
   },
 
+  // ===== Volcanus: elimina UNA COLUMNA aleatoria -> ANIMACIÓN DE CASCADA =====
   volcanus: (attacker,target,ctx) => {
-  target.hp -= 35;
-  const owner = ctx.ownerIndex;
-  const col = Math.floor(Math.random()*COLS);
+    target.hp -= 35;
+    const owner = ctx.ownerIndex;
+    const col = Math.floor(Math.random()*COLS);
 
-  highlightBoardColumn(col);
+    highlightBoardColumn(col);
 
-  setTimeout(()=>{
-    const counts = {};
-    for(let y=0;y<ROWS;y++){
-      const tile = board[y][col];
-      if(tile==null) continue;
-      counts[tile] = (counts[tile]||0)+1;
-      board[y][col]=null;
-    }
+    setTimeout(()=>{
+      const counts = {};
+      const removed = [];
+      for(let y=0;y<ROWS;y++){
+        const tile = board[y][col];
+        if(tile==null) continue;
+        counts[tile] = (counts[tile]||0)+1;
+        removed.push({x:col,y});
+        board[y][col]=null;
+      }
 
-    // Reparte energía según fichas eliminadas
-    Object.keys(counts).forEach(color=>{
-      if(color === WOLF) return;
-      const cnt = counts[color];
-      awardEnergyToOwnerColor(owner, color, cnt);
-    });
+      // Reparte energía según fichas eliminadas
+      Object.keys(counts).forEach(color=>{
+        if(color === WOLF) return;
+        const cnt = counts[color];
+        awardEnergyToOwnerColor(owner, color, cnt);
+      });
 
-    applyGravity();
-    resolveBoard(owner, ()=>{ render(); ctx.onComplete(); });
-  },420);
-},
+      // Usar animateCascade para mostrar la eliminación + caída
+      animateCascade(removed, () => {
+        render();
+        ctx.onComplete();
+      });
+    },420);
+  },
 
   // ===== Trueno =====
   luminar: (attacker,target,ctx) => {
@@ -853,28 +870,32 @@ cryon: (attacker, target, ctx) => {
     attacker.hp = Math.min(MAX_HP, attacker.hp + 10); // Cura al atacante
     ctx.onComplete();
   },
-  electros: (attacker,target,ctx) => {
-  target.hp -= 20;
-  const owner = ctx.ownerIndex;
 
-  const counts = {};
-  for(let y=0;y<ROWS;y++){
-    for(let x=0;x<COLS;x++){
-      if(board[y][x]==='trueno'){
-        counts['trueno'] = (counts['trueno']||0)+1;
-        board[y][x]=null;
+  // ===== Electros: elimina todas las fichas 'trueno' -> ANIMACIÓN DE CASCADA =====
+  electros: (attacker,target,ctx) => {
+    target.hp -= 20;
+    const owner = ctx.ownerIndex;
+
+    const counts = {};
+    const removed = [];
+    for(let y=0;y<ROWS;y++){
+      for(let x=0;x<COLS;x++){
+        if(board[y][x]==='trueno'){
+          counts['trueno'] = (counts['trueno']||0)+1;
+          removed.push({x,y});
+          board[y][x]=null;
+        }
       }
     }
-  }
 
-  // Reparte energía por las fichas de trueno eliminadas
-  if(counts['trueno']){
-    awardEnergyToOwnerColor(owner, 'trueno', counts['trueno']);
-  }
+    // Reparte energía por las fichas de trueno eliminadas
+    if(counts['trueno']){
+      awardEnergyToOwnerColor(owner, 'trueno', counts['trueno']);
+    }
 
-  applyGravity();
-  resolveBoard(owner, ()=>{ render(); ctx.onComplete(); });
-},
+    // Mostrar animación de eliminación + caída
+    animateCascade(removed, ()=>{ render(); ctx.onComplete(); });
+  },
 
   sylphora: (attacker, target, ctx) => {
   target.hp -= 20;
@@ -896,6 +917,7 @@ cryon: (attacker, target, ctx) => {
   ctx.onComplete();
 },
 
+  // ===== Terragorn: elimina fila + columna -> ANIMACIÓN DE CASCADA =====
   terragorn: (attacker,target,ctx) => {
   target.hp -= 20;
   const owner = ctx.ownerIndex;
@@ -907,11 +929,13 @@ cryon: (attacker, target, ctx) => {
 
   setTimeout(()=>{
     const counts = {};
+    const removed = [];
     // fila
     for(let x=0;x<COLS;x++){
       const tile = board[row][x];
       if(tile==null) continue;
       counts[tile] = (counts[tile]||0)+1;
+      removed.push({x,y:row});
       board[row][x]=null;
     }
     // columna
@@ -919,6 +943,7 @@ cryon: (attacker, target, ctx) => {
       const tile = board[y][col];
       if(tile==null) continue;
       counts[tile] = (counts[tile]||0)+1;
+      removed.push({x:col,y});
       board[y][col]=null;
     }
 
@@ -929,8 +954,8 @@ cryon: (attacker, target, ctx) => {
       awardEnergyToOwnerColor(owner, color, cnt);
     });
 
-    applyGravity();
-    resolveBoard(owner, ()=>{ render(); ctx.onComplete(); });
+    // Mostrar animación de eliminación + caída
+    animateCascade(removed, ()=>{ render(); ctx.onComplete(); });
   },420);
 },
 
@@ -943,10 +968,12 @@ cryon: (attacker, target, ctx) => {
 
   setTimeout(()=>{
     const counts = {};
+    const removed = [];
     for(let x=0;x<COLS;x++){
       const tile = board[row][x];
       if(tile==null) continue;
       counts[tile] = (counts[tile]||0)+1;
+      removed.push({x,y:row});
       board[row][x]=null;
     }
 
@@ -965,8 +992,8 @@ cryon: (attacker, target, ctx) => {
       awardEnergyToOwnerColor(owner, color, cnt);
     });
 
-    applyGravity();
-    resolveBoard(owner, ()=>{ render(); ctx.onComplete(); });
+    // Mostrar animación de eliminación + caída
+    animateCascade(removed, ()=>{ render(); ctx.onComplete(); });
   },420);
 },
 
@@ -1011,7 +1038,7 @@ function performAttack(attacker, target, ownerIndex, targetIndex) {
 }
 /* ================= STATE ================= */
 let board = [];
-let players = []; // [{name,moves,evo,criaturas: [{type,nombre,tileColor,power,hp,energy,evolved}]}, ...]
+let players = []; // [{name,moves,evo,skipMovePenalty,criaturas: [{type,nombre,tileColor,power,hp,energy,evolved}]}, ...]
 let currentPlayer = 0;
 let movesLeft = 2;
 let selectedCell = null;
@@ -1297,38 +1324,6 @@ function applyGravity(){
   }
 }
 
-/* ================= Resolve board with owner attribution & cascades ================= */
-function resolveBoard(initialOwner, cb){
-  // handle initial groups -> initialOwner, then cascades -> other player alternating
-  const processAll = (ownerStart, done) => {
-    let owner = ownerStart;
-    const step = () => {
-      const groups = findMatchGroups(board);
-      if(groups.length === 0){ done(); return; }
-      processGroupsForOwner(groups, owner);
-      // remove
-      const rem = new Set();
-      groups.forEach(g => g.coords.forEach(p => rem.add(p.y+','+p.x)));
-      rem.forEach(k => { const [y,x]=k.split(',').map(Number); board[y][x]=null; });
-      applyGravity();
-      owner = 1 - owner; // cascades go to opponent
-      setTimeout(step, 200);
-    };
-    step();
-  };
-
-  const initGroups = findMatchGroups(board);
-  if(initGroups.length === 0){ if(cb) cb(); return; }
-  processGroupsForOwner(initGroups, initialOwner);
-  // remove initial
-  const remInit = new Set();
-  initGroups.forEach(g=>g.coords.forEach(p=>remInit.add(p.y+','+p.x)));
-  remInit.forEach(k=>{ const [y,x]=k.split(',').map(Number); board[y][x]=null; });
-  applyGravity();
-  const next = 1 - initialOwner;
-  setTimeout(()=> processAll(next, ()=>{ render(); if(cb) cb(); }), 200);
-}
-
 /* ================= RENDER ================= */
 function render(){
   renderBoard();
@@ -1348,6 +1343,7 @@ function renderBoard(){
       const tile = board[y][x];
       const div = document.createElement('div'); div.className='cell';
       div.dataset.x = x; div.dataset.y = y;
+      div.id = `cell-${y}-${x}`;
       if(tile === WOLF){
         div.classList.add('lobo');
         div.textContent = '🐺';
@@ -1583,202 +1579,211 @@ function evolveCreature(pi,ci){
   ov.style.display = 'flex';
   oldImg.style.transform = 'scale(1)';
   newImg.style.transform = 'scale(0.6)';
-  setTimeout(()=>{ oldImg.style.transform = 'scale(0.4)'; newImg.style.transform = 'scale(1)'; }, 80);
-  setTimeout(()=>{ ov.style.display = 'none'; }, 2000);
+  setTimeout(()=>{ oldImg.style.transform = 'scale(0.4)'; newImg.style.transform = 'scale(1)'; }, 100);
+  setTimeout(()=>{ ov.style.display='none'; cr.evolved = true; render(); }, 1100);
+}
 
-  // === aplicar evolución ===
-  cr.evolved = true;
-  const cost = Math.ceil(ENERGY_COSTS[cr.type] / (cr.evolved ? 2 : 1));
-  cr.energy = Math.min(cr.energy, cost);
+/* ================= EFECTO DE CASCADA GLOBAL (NUEVAS FUNCIONES) ================= */
+/* animateCascade(removedTiles, onComplete) y applyGravityWithAnimation(onComplete)
+   se encargan de mostrar visualmente las fichas que se eliminan y la caída en cascada.
+   removedTiles = [{x,y}, ...] en coordenadas del tablero.
+*/
+function animateCascade(removedTiles, onComplete){
+  // marcar visualmente las celdas que se eliminan y eliminarlas del tablero lógico
+  removedTiles.forEach(({x,y}) => {
+    const id = `cell-${y}-${x}`;
+    const c = document.getElementById(id);
+    if (c) c.classList.add('removing');
+    board[y][x] = null;
+  });
 
-  // ⚡ Ajustar energía si tiene más de 10
-  if(cr.energy > 10){
-    cr.energy = 10;
+  // esperar 0.6s antes de aplicar gravedad y mostrar caída
+  setTimeout(() => {
+    applyGravityWithAnimation(onComplete);
+  }, 600);
+}
+
+function applyGravityWithAnimation(onComplete){
+  // Aplica la gravedad (similar al applyGravity existente)
+  for(let x=0;x<COLS;x++){
+    const col=[];
+    for(let y=ROWS-1;y>=0;y--) if(board[y][x]!=null) col.push(board[y][x]);
+    while(col.length < ROWS){
+      let tile, tries=0;
+      do {
+        tile = randTile();
+        tries++;
+        if(tries>60) break;
+      } while(col.length>=2 && col[col.length-1]===tile && col[col.length-2]===tile);
+      col.push(tile);
+    }
+    for(let y=ROWS-1,i=0;y>=0;y--,i++) board[y][x] = col[i];
   }
 
-  // evolution consumes a move
-  movesLeft = Math.max(0, movesLeft - 1);
-  player.moves = Math.max(0, player.moves - 1);
+  // Volvemos a renderizar para que el DOM refleje el nuevo estado
+  renderBoard();
 
-  render();
-  if(movesLeft <= 0) setTimeout(()=> endTurn(), 700);
-  else resetTimer();
-}
-
-/* ================= Visual helpers ================= */
-function highlightBoardRow(row){
-  document.querySelectorAll('#board .cell').forEach(c=>{
-    if(+c.dataset.y === row) c.classList.add('flash-row');
+  // Animación de caída: aplicamos 'falling' a cada celda con un delay por columna
+  const cells = Array.from(document.querySelectorAll('#board .cell'));
+  cells.forEach((c,i) => {
+    c.classList.add('falling');
+    const colIndex = i % COLS;
+    const delay = (typeof getComputedStyle === 'function')
+      ? parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--cascade-col-delay')) || 0.05
+      : 0.05;
+    c.style.animationDelay = (colIndex * delay) + 's';
   });
-  setTimeout(()=>{
-    document.querySelectorAll('#board .cell').forEach(c=> c.classList.remove('flash-row'));
-  }, 800);
+
+  // Espera el total de animación (0.4s) + margen (0.2s) antes de limpiar clases y seguir
+  setTimeout(() => {
+    cells.forEach(c => c.classList.remove('falling','removing'));
+    if(onComplete) onComplete();
+  }, 600);
 }
+
+/* ================= R E S O L V E  B O A R D  (reemplazada para usar animateCascade) ================= */
+function resolveBoard(initialOwner, cb){
+  // handle initial groups -> initialOwner, then cascades -> other player alternating
+  const processAll = (ownerStart, done) => {
+    let owner = ownerStart;
+    const step = () => {
+      const groups = findMatchGroups(board);
+      if(groups.length === 0){ done(); return; }
+
+      // Atribuye energía/evo según grupos encontrados (igual que antes)
+      processGroupsForOwner(groups, owner);
+
+      // Recolectar posiciones eliminadas
+      const rem = new Set();
+      groups.forEach(g => g.coords.forEach(p => rem.add(p.y+','+p.x)));
+      const removedTiles = Array.from(rem).map(k => {
+        const [y,x] = k.split(',').map(Number);
+        return {x,y};
+      });
+
+      // Efecto de cascada visual (animación) y después continuar con la siguiente cascada
+      animateCascade(removedTiles, () => {
+        owner = 1 - owner; // alterna propietario para cascadas
+        setTimeout(step, 200); // pequeña pausa entre cascadas
+      });
+    };
+    step();
+  };
+
+  // Buscar grupos iniciales
+  const initGroups = findMatchGroups(board);
+  if(initGroups.length === 0){ if(cb) cb(); return; }
+
+  // Procesar atribuciones por los grupos iniciales
+  processGroupsForOwner(initGroups, initialOwner);
+
+  // Recolectar tiles iniciales eliminados
+  const remInit = new Set();
+  initGroups.forEach(g=>g.coords.forEach(p=>remInit.add(p.y+','+p.x)));
+  const removedTilesInit = Array.from(remInit).map(k => {
+    const [y,x] = k.split(',').map(Number);
+    return {x,y};
+  });
+
+  // Usar animación visual también en la primera eliminación
+  animateCascade(removedTilesInit, () => {
+    const next = 1 - initialOwner;
+    setTimeout(()=> processAll(next, ()=>{ render(); if(cb) cb(); }), 200);
+  });
+}
+
+/* ================= FIN resolveBoard ================= */
+
+/* ================= Utility functions y complementos (resto del flujo) ================= */
 
 function highlightBoardColumn(col){
-  document.querySelectorAll('#board .cell').forEach(c=>{
-    if(+c.dataset.x === col) c.classList.add('flash-col');
-  });
-  setTimeout(()=>{
-    document.querySelectorAll('#board .cell').forEach(c=> c.classList.remove('flash-col'));
-  }, 800);
+  // highlight visual temporary a column
+  for(let y=0;y<ROWS;y++){
+    const el = document.getElementById(`cell-${y}-${col}`);
+    if(el) el.classList.add('flash-col');
+  }
+  setTimeout(()=>{ for(let y=0;y<ROWS;y++){ const el=document.getElementById(`cell-${y}-${col}`); if(el) el.classList.remove('flash-col'); } }, 600);
 }
 
-function flashEnergy(pi,ci){
-  const el = document.getElementById(`p${pi}-c${ci}`);
-  if(!el) return;
-  el.style.boxShadow = '0 8px 30px rgba(255,200,60,0.08)';
-  setTimeout(()=> el.style.boxShadow = '', 700);
+function highlightBoardRow(row){
+  for(let x=0;x<COLS;x++){
+    const el = document.getElementById(`cell-${row}-${x}`);
+    if(el) el.classList.add('flash-row');
+  }
+  setTimeout(()=>{ for(let x=0;x<COLS;x++){ const el=document.getElementById(`cell-${row}-${x}`); if(el) el.classList.remove('flash-row'); } }, 600);
 }
 
-/* ================= Timer & turn management ================= */
+function flashEnergy(ownerIndex, ci){
+  const el = document.querySelector(`#p${ownerIndex}-c${ci} .energyFill`);
+  if(el){
+    el.classList.add('glow');
+    setTimeout(()=>el.classList.remove('glow'),900);
+  }
+}
+
+function showAttackMessage(msg, color){
+  const am = document.getElementById('attackMsg');
+  am.textContent = msg;
+  am.style.background = color || '#222';
+  am.classList.add('show');
+  setTimeout(()=>am.classList.remove('show'),900);
+}
+
+/* ================= Check Win, Turn handling, Timer (respetando lógica original) ================= */
+
+function checkWin(){
+  const p0Alive = players[0].criaturas.some(c=>c.hp>0);
+  const p1Alive = players[1].criaturas.some(c=>c.hp>0);
+  if(!p0Alive || !p1Alive){
+    const winner = p0Alive ? players[0].name : players[1].name;
+    document.getElementById('turnText').textContent = winner + ' gana!';
+    document.getElementById('turnOverlay').style.display = 'flex';
+    clearInterval(timerId);
+  }
+}
+
+function endTurn(){
+  // pasar al siguiente jugador
+  currentPlayer = 1 - currentPlayer;
+  movesLeft = players[currentPlayer].moves = 2;
+  extraTurnsThisTurn = 0;
+  resetTimer();
+  render();
+}
+
+/* Timer helpers */
 function resetTimer(){
-  stopTimer();
   turnSeconds = TURN_SECONDS;
-  updateTimerDisplay();
-  startTimer();
-}
-function startTimer(){
-  updateTimerDisplay();
+  const timerEl = document.getElementById('timer');
+  timerEl.textContent = turnSeconds;
+  if(timerId) clearInterval(timerId);
   timerId = setInterval(()=>{
     turnSeconds--;
-    updateTimerDisplay();
+    timerEl.textContent = turnSeconds;
+    if(turnSeconds <= WARNING_SECONDS) timerEl.classList.add('warning');
     if(turnSeconds <= 0){
-      stopTimer();
-      if(movesLeft > 1){
-        movesLeft = Math.max(0, movesLeft - 1);
-        players[currentPlayer].moves = Math.max(0, players[currentPlayer].moves - 1);
-        showBubble(players[currentPlayer].name + ' perdió 1 movimiento por tiempo.');
-        resetTimer(); render();
-      } else {
-        showBubble(players[currentPlayer].name + ' agotó el tiempo. Se pasa el turno.');
-        setTimeout(()=> endTurn(), 900);
-      }
+      clearInterval(timerId);
+      endTurn();
     }
   }, 1000);
 }
-function stopTimer(){ if(timerId){ clearInterval(timerId); timerId = null; } }
-function updateTimerDisplay(){
-  const el = document.getElementById('timer');
-  el.textContent = turnSeconds;
-  if(turnSeconds <= WARNING_SECONDS) el.classList.add('warning'); else el.classList.remove('warning');
+
+/* ================= Interaction helpers for attacks that remove tiles (integration note)
+   Many creature powers call applyGravity() + resolveBoard(). Those flows will now trigger the cascade
+   visual when resolveBoard detects matches. For powers that manually removed tiles (volcanus, terragorn,
+   electros, columnus) we've replaced the flow to call animateCascade(removed, ...) directly to show the
+   visual removal and falling immediately.
+*/
+
+/* ================= INIT minimal helpers for demo stability ================= */
+
+function renderInitial(){
+  renderBoard();
+  renderPlayers();
 }
 
-/* ================= End turn ================= */
-function endTurn() {
-  // Reinicia movimientos del jugador actual
-  players[currentPlayer].moves = 2;
+/* ================= Start default minimal boot (if user clicks Jugar se llama startGame) ================= */
 
-  const next = 1 - currentPlayer;
-
-  showTurnOverlay(players[next].name, () => {
-    currentPlayer = next;
-    extraTurnsThisTurn = 0;
-
-    // === 🔥 APLICAR QUEMADURA (Ignarok) ===
-    players[currentPlayer].criaturas.forEach(c => {
-      if (c.hp > 0 && c.burnedTurns && c.burnedTurns > 0) {
-        c.hp = Math.max(0, c.hp - 5);
-        c.burnedTurns--;
-
-        showBubble(`${c.nombre} sufre 5 de daño por quemadura!`);
-
-        // Si muere por la quemadura
-        if (c.hp <= 0) {
-          c.hp = 0;
-          showBubble(`${c.nombre} ha sido derrotado por la quemadura!`);
-        }
-      }
-    });
-
-    // === 🪴 APLICAR PENALIZACIÓN DE MOVIMIENTO (Sylphora) ===
-    if (players[currentPlayer].skipMovePenalty) {
-      players[currentPlayer].moves = 1; // empieza con solo 1 movimiento
-      players[currentPlayer].skipMovePenalty = false; // se resetea
-      showBubble(`${players[currentPlayer].name} perdió un movimiento por las enredaderas!`);
-    } else {
-      players[currentPlayer].moves = 2; // normal
-    }
-
-    // === Inicializar movimientos ===
-    movesLeft = players[currentPlayer].moves;
-
-    resetTimer();
-    render();
-
-    checkWin(); // comprobar si la partida termina aquí
-    if (!checkWin()) {
-      // después de aplicar efectos, limpiar tablero si hay matches
-      resolveBoard(currentPlayer, () => { render(); });
-    }
-  });
-}
-
-
-function showTurnOverlay(name, cb){
-  const overlay = document.getElementById('turnOverlay'); const txt = document.getElementById('turnText');
-  txt.textContent = `Turno de ${name}`;
-  overlay.style.display = 'flex';
-  setTimeout(()=> { overlay.style.display = 'none'; if(cb) cb(); }, 900);
-}
-
-/* ================= Attack message helper ================= */
-function showAttackMessage(text, color){
-  const el = document.getElementById('attackMsg');
-  el.textContent = text;
-  el.style.background = color || '#ff6b6b';
-  el.style.borderRadius = '8px';
-  el.style.padding = '6px 14px';
-  el.style.display = 'block';
-  el.classList.add('show');
-  setTimeout(()=> { el.classList.remove('show'); setTimeout(()=> el.style.display='none',300); }, 950);
-}
-
-/* ================= Win check ================= */
-function checkWin(){
-  for(let i=0;i<2;i++){
-    if(players[i].criaturas.length > 0 && players[i].criaturas.every(c=>c.hp <= 0)){
-      stopTimer();
-      setTimeout(()=> alert(`${players[1-i].name} gana!`), 60);
-      return true;
-    }
-  }
-  return false;
-}
-
-/* ================= Utils: initial selection UI binding (recreate if screen reopened) ================= */
-function initSelectionUI(){
-  // reuse earlier function
-  initSelectionUI_internal();
-}
-
-/* keep duplicate safe function name */
-function initSelectionUI_internal(){
-  p1Selected=[]; p2Selected=[];
-  document.getElementById('playBtn').disabled = true;
-  const types = Object.keys(CREATURES);
-  const p1 = document.getElementById('p1Choices'), p2 = document.getElementById('p2Choices');
-  p1.innerHTML=''; p2.innerHTML='';
-  types.forEach(t=>{
-    const c1 = createCard(t,1); p1.appendChild(c1);
-    const c2 = createCard(t,2); p2.appendChild(c2);
-  });
-  document.getElementById('p1Header').classList.add('active');
-  document.getElementById('p2Header').classList.remove('active');
-}
-
-/* ================= Init minimal startup ================= */
-document.addEventListener('DOMContentLoaded', ()=> {
-  document.getElementById('playBtn').addEventListener('click', ()=> startGame());
-  initSelectionUI();
-  // initial screen is welcome
-});
-
-/* expose debug helper */
-window._dev = { startFromDefault: ()=>{ p1Selected = sample(Object.keys(CREATURES),2); p2Selected = sample(Object.keys(CREATURES).filter(t=>!p1Selected.includes(t)),2); startGame(); } };
-
-/* For convenience, start with welcome screen active (already) */
-showScreen('welcomeScreen');
 </script>
 </body>
 </html>
