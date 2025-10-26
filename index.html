@@ -994,6 +994,26 @@ function showBubble(txt){ const b=document.getElementById('bubble'); b.textConte
 function uid(prefix){
   return prefix + Math.random().toString(36).slice(2,9);
 }
+/* ================= STATE ================= */
+// ... (tus variables de estado)
+
+/* HELPERS */
+function sample(arr,n){ /*...*/ }
+function randTile(){ /*...*/ }
+function clamp(v,a,b){ /*...*/ }
+function showBubble(txt){ /*...*/ }
+function uid(prefix){ /*...*/ }
+
+// 🌟 AÑADE ESTA NUEVA FUNCIÓN AQUÍ 🌟
+function completeAction() {
+    render();
+    checkWin();
+    if (movesLeft <= 0 && !isBoardLocked) {
+        endTurn();
+    } else {
+        isBoardLocked = false;
+    }
+}
 
 /* ===== Energy helper: centraliza cómo se añaden puntos de energía ===== */
 function awardEnergyToOwnerColor(ownerIndex, color, amount){
@@ -1556,6 +1576,9 @@ function renderPlayers(){
   });
 }
 
+/* Render players and creature cards with bars, buttons, attack descriptions */
+// ...
+
 /* ================= Interaction: moving tiles ================= */
 function onCellClick(x, y) {
     if (isBoardLocked) return;
@@ -1567,21 +1590,18 @@ function onCellClick(x, y) {
 
     const dx = Math.abs(selectedCell.x - x), dy = Math.abs(selectedCell.y - y);
     if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
-        // Intercambia las fichas en el array de datos
+        // Intercambia las fichas
         [board[selectedCell.y][selectedCell.x], board[y][x]] = [board[y][x], board[selectedCell.y][selectedCell.x]];
 
-        // Comprueba si el intercambio crea una combinación
         if (findMatchGroups(board).length > 0) {
+            // ** Movimiento válido **
             movesLeft = Math.max(0, movesLeft - 1);
             players[currentPlayer].moves = Math.max(0, players[currentPlayer].moves - 1);
-            render(); // Renderiza el intercambio primero
             selectedCell = null;
-            resolveBoard(currentPlayer, () => {
-                if (movesLeft <= 0) endTurn();
-            });
+            resolveBoard(currentPlayer, completeAction); // Llama a resolveBoard con la nueva función
             resetTimer();
         } else {
-            // Si no hay combinación, deshaz el intercambio
+            // ** Movimiento inválido, deshacer **
             [board[selectedCell.y][selectedCell.x], board[y][x]] = [board[y][x], board[selectedCell.y][selectedCell.x]];
             selectedCell = { x, y };
             renderBoard();
@@ -1610,51 +1630,59 @@ function selectAttackTarget(pi,ci){
   });
 }
 
-function performAttack(pi,ci,targetIdx){
-  const attacker = players[pi].criaturas[ci];
-  const opponentIndex = 1 - pi;
-  const target = players[opponentIndex].criaturas[targetIdx];
-  const cost = Math.ceil(ENERGY_COSTS[attacker.type] / (attacker.evolved ? 2 : 1));
-  if(attacker.energy < cost) return;
-  attacker.energy = Math.max(0, attacker.energy - cost);
+function performAttack(pi, ci, targetIdx) {
+    const attacker = players[pi].criaturas[ci];
+    const opponentIndex = 1 - pi;
+    const target = players[opponentIndex].criaturas[targetIdx];
+    const cost = Math.ceil(ENERGY_COSTS[attacker.type] / (attacker.evolved ? 2 : 1));
+    if (attacker.energy < cost) return;
+    attacker.energy = Math.max(0, attacker.energy - cost);
 
-  // Show attack message with creature name
-  showAttackMessage(`¡Ataque — ${attacker.nombre}!`, CREATURES[attacker.type].color || '#ff6b6b');
+    showAttackMessage(`¡Ataque — ${attacker.nombre}!`, CREATURES[attacker.type].color || '#ff6b6b');
 
-  // projectile animation
-  const attackerEl = document.getElementById(`p${pi}-c${ci}`);
-  const defenderEl = document.getElementById(`p${opponentIndex}-c${targetIdx}`);
-  const attackerRect = attackerEl ? attackerEl.getBoundingClientRect() : null;
-  const defenderRect = defenderEl ? defenderEl.getBoundingClientRect() : null;
+    const attackerEl = document.getElementById(`p${pi}-c${ci}`);
+    const defenderEl = document.getElementById(`p${opponentIndex}-c${targetIdx}`);
+    const attackerRect = attackerEl ? attackerEl.getBoundingClientRect() : null;
+    const defenderRect = defenderEl ? defenderEl.getBoundingClientRect() : null;
 
-  const proj = document.createElement('div'); proj.className='projectile';
-  proj.style.background = CREATURES[attacker.type].color || '#fff';
-  document.body.appendChild(proj);
+    const proj = document.createElement('div');
+    proj.className = 'projectile';
+    proj.style.background = CREATURES[attacker.type].color || '#fff';
+    document.body.appendChild(proj);
 
-  let startX = window.innerWidth/2, startY = window.innerHeight/2;
-  if(attackerRect){ startX = attackerRect.left + attackerRect.width/2; startY = attackerRect.top + attackerRect.height/2; }
-  let endX = startX, endY = startY - 200;
-  if(defenderRect){ endX = defenderRect.left + defenderRect.width/2; endY = defenderRect.top + defenderRect.height/2; }
+    let startX = window.innerWidth / 2, startY = window.innerHeight / 2;
+    if (attackerRect) { startX = attackerRect.left + attackerRect.width / 2; startY = attackerRect.top + attackerRect.height / 2; }
+    let endX = startX, endY = startY - 200;
+    if (defenderRect) { endX = defenderRect.left + defenderRect.width / 2; endY = defenderRect.top + defenderRect.height / 2; }
 
-  proj.style.left = (startX-11) + 'px'; proj.style.top = (startY-11) + 'px';
-  proj.animate([
-    { transform:`translate(0,0) scale(1)`, opacity:1 },
-    { transform:`translate(${endX-startX}px, ${endY-startY}px) scale(0.9)`, opacity:1 }
-  ], { duration: 700, easing: 'cubic-bezier(.2,.9,.2,1)' });
+    proj.style.left = (startX - 11) + 'px'; proj.style.top = (startY - 11) + 'px';
+    proj.animate(
+        [{ transform: `translate(0,0) scale(1)`, opacity: 1 },
+        { transform: `translate(${endX - startX}px, ${endY - startY}px) scale(0.9)`, opacity: 1 }],
+        { duration: 700, easing: 'cubic-bezier(.2,.9,.2,1)' }
+    );
 
-  setTimeout(()=>{
-    proj.remove();
-    const ctx = { board, ownerIndex: currentPlayer, onComplete: ()=>{ render(); checkWin(); if(movesLeft<=0) endTurn(); } };
-    if(defenderEl){ defenderEl.classList.add('hit'); setTimeout(()=> defenderEl.classList.remove('hit'),450); }
-    const powerFn = POWERS[ attacker.type ] || POWERS[ attacker.power ] || POWERS[ CREATURES[attacker.type] && CREATURES[attacker.type].tileColor ];
-    if(powerFn) powerFn(attacker, target, ctx);
-    else ctx.onComplete();
+    setTimeout(() => {
+        proj.remove();
 
-    // decrease move counters (attack costs one of player's moves)
-    movesLeft = Math.max(0, movesLeft - 1);
-    players[pi].moves = Math.max(0, players[pi].moves - 1);
-    resetTimer();
-  }, 720);
+        // ** Lógica simplificada **
+        movesLeft = Math.max(0, movesLeft - 1);
+        players[pi].moves = Math.max(0, players[pi].moves - 1);
+
+        const ctx = { board, ownerIndex: currentPlayer, onComplete: completeAction }; // Usamos la nueva función
+
+        if (defenderEl) { defenderEl.classList.add('hit'); setTimeout(() => defenderEl.classList.remove('hit'), 450); }
+        
+        const powerFn = POWERS[attacker.type] || POWERS[attacker.power] || POWERS[CREATURES[attacker.type] && CREATURES[attacker.type].tileColor];
+        
+        if (powerFn) {
+            powerFn(attacker, target, ctx);
+        } else {
+            ctx.onComplete();
+        }
+
+        resetTimer();
+    }, 720);
 }
 
 /* ================= Evolution ================= */
