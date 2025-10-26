@@ -73,6 +73,22 @@
   50% { filter: brightness(2.3); }
   100% { filter: brightness(1); }
 }
+/* === 🌟 NUEVAS ANIMACIONES DE FICHAS 🌟 === */
+.cell.destroying {
+  animation: destroyTile 0.3s ease-out forwards;
+}
+@keyframes destroyTile {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.2); opacity: 0; }
+}
+
+.cell.new-tile {
+  animation: newTileFall 0.4s ease-out;
+}
+@keyframes newTileFall {
+  from { transform: translateY(-200px); }
+  to { transform: translateY(0); }
+}
 /* === ESTADO QUEMADO (Ignarok) === */
 .burned {
   position: relative;
@@ -340,10 +356,8 @@
     gap: 3px;
   }
 
-  .cell {
-    border-radius: 4px;
-    font-size: 0.8rem;
-  }
+  .cell{border-radius:10px;display:flex;align-items:center;justify-content:center;user-select:none;font-weight:700;transition:transform .3s ease-out, filter .18s; position: absolute;}
+  .cell:hover{filter:brightness(1.2)}
 
   /* Pantallas muy pequeñas */
   @media (max-width: 380px) {
@@ -441,14 +455,7 @@ img,svg,canvas{max-width:100%;height:auto;display:block}
   box-sizing: border-box;
 }
 #board, .board {
-  width: min(720px, 85vw);
-  aspect-ratio: 1 / 1;
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  grid-auto-rows: 1fr;
-  gap: var(--gap);
-  padding: 6px;
-  border-radius: 12px;
+  .board{display:grid;grid-template-columns:repeat(8,var(--cell-size));grid-auto-rows:var(--cell-size);gap:var(--gap);background:rgba(255,255,255,0.02);padding:10px;border-radius:12px;position:relative}
   margin: 6px 0;
 }
 .cell{
@@ -658,6 +665,8 @@ const TURN_SECONDS = 120;
 const WARNING_SECONDS = 20;
 const MAX_EXTRA_PER_TURN = 2;
 const MAX_ENERGY_POINTS = 5; // cap energy points visually (per earlier req)
+const TILE_DESTROY_DURATION = 300;
+const TILE_FALL_DURATION = 300;
 
 const ENERGY_COSTS = {
   agua: 20,
@@ -820,32 +829,22 @@ cryon: (attacker, target, ctx) => {
   },
 
   volcanus: (attacker,target,ctx) => {
-  target.hp -= 35;
-  const owner = ctx.ownerIndex;
-  const col = Math.floor(Math.random()*COLS);
+   target.hp -= 35;
+   const owner = ctx.ownerIndex;
+   const col = Math.floor(Math.random() * COLS);
 
-  highlightBoardColumn(col);
+   highlightBoardColumn(col);
 
-  setTimeout(()=>{
-    const counts = {};
-    for(let y=0;y<ROWS;y++){
-      const tile = board[y][col];
-      if(tile==null) continue;
-      counts[tile] = (counts[tile]||0)+1;
-      board[y][col]=null;
-    }
-
-    // Reparte energía según fichas eliminadas
-    Object.keys(counts).forEach(color=>{
-      if(color === WOLF) return;
-      const cnt = counts[color];
-      awardEnergyToOwnerColor(owner, color, cnt);
-    });
-
-    applyGravity();
-    resolveBoard(owner, ()=>{ render(); ctx.onComplete(); });
-  },420);
-},
+    setTimeout(() => {
+      const tilesToClear = [];
+      for (let y = 0; y < ROWS; y++) {
+          if (board[y][col] != null) {
+              tilesToClear.push({ y, x: col });
+          }
+      }
+      animateAndClearTiles(tilesToClear, owner, ctx.onComplete);
+    }, 420);
+  },
 
   // ===== Trueno =====
   luminar: (attacker,target,ctx) => {
@@ -854,27 +853,18 @@ cryon: (attacker, target, ctx) => {
     ctx.onComplete();
   },
   electros: (attacker,target,ctx) => {
-  target.hp -= 20;
-  const owner = ctx.ownerIndex;
-
-  const counts = {};
-  for(let y=0;y<ROWS;y++){
-    for(let x=0;x<COLS;x++){
-      if(board[y][x]==='trueno'){
-        counts['trueno'] = (counts['trueno']||0)+1;
-        board[y][x]=null;
-      }
+    target.hp -= 20;
+    const owner = ctx.ownerIndex;
+    const tilesToClear = [];
+    for (let y = 0; y < ROWS; y++) {
+        for (let x = 0; x < COLS; x++) {
+            if (board[y][x] === 'trueno') {
+                tilesToClear.push({ y, x });
+            }
+        }
     }
-  }
-
-  // Reparte energía por las fichas de trueno eliminadas
-  if(counts['trueno']){
-    awardEnergyToOwnerColor(owner, 'trueno', counts['trueno']);
-  }
-
-  applyGravity();
-  resolveBoard(owner, ()=>{ render(); ctx.onComplete(); });
-},
+    animateAndClearTiles(tilesToClear, owner, ctx.onComplete);
+  },
 
   sylphora: (attacker, target, ctx) => {
   target.hp -= 20;
@@ -897,78 +887,48 @@ cryon: (attacker, target, ctx) => {
 },
 
   terragorn: (attacker,target,ctx) => {
-  target.hp -= 20;
-  const owner = ctx.ownerIndex;
-  const row = Math.floor(Math.random()*ROWS);
-  const col = Math.floor(Math.random()*COLS);
+    target.hp -= 20;
+    const owner = ctx.ownerIndex;
+    const row = Math.floor(Math.random() * ROWS);
+    const col = Math.floor(Math.random() * COLS);
 
-  highlightBoardRow(row);
-  highlightBoardColumn(col);
+    highlightBoardRow(row);
+    highlightBoardColumn(col);
 
-  setTimeout(()=>{
-    const counts = {};
-    // fila
-    for(let x=0;x<COLS;x++){
-      const tile = board[row][x];
-      if(tile==null) continue;
-      counts[tile] = (counts[tile]||0)+1;
-      board[row][x]=null;
-    }
-    // columna
-    for(let y=0;y<ROWS;y++){
-      const tile = board[y][col];
-      if(tile==null) continue;
-      counts[tile] = (counts[tile]||0)+1;
-      board[y][col]=null;
-    }
+    setTimeout(() => {
+        const tilesToClear = new Set();
+        for (let x = 0; x < COLS; x++) {
+            if (board[row][x] != null) tilesToClear.add(`${row},${x}`);
+        }
+        for (let y = 0; y < ROWS; y++) {
+            if (board[y][col] != null) tilesToClear.add(`${y},${col}`);
+        }
 
-    // Reparte energía por todas las fichas destruidas
-    Object.keys(counts).forEach(color=>{
-      if(color === WOLF) return;
-      const cnt = counts[color];
-      awardEnergyToOwnerColor(owner, color, cnt);
-    });
+        const coords = Array.from(tilesToClear).map(s => {
+            const [y, x] = s.split(',').map(Number);
+            return { y, x };
+        });
 
-    applyGravity();
-    resolveBoard(owner, ()=>{ render(); ctx.onComplete(); });
-  },420);
-},
+        animateAndClearTiles(coords, owner, ctx.onComplete);
+    }, 420);
+  },
 
  columnus: (attacker,target,ctx) => {
-  target.hp -= 20;
-  const owner = ctx.ownerIndex;
-  const row = Math.floor(Math.random()*ROWS);
+    target.hp -= 20;
+    const owner = ctx.ownerIndex;
+    const row = Math.floor(Math.random() * ROWS);
 
-  highlightBoardRow(row);
-
-  setTimeout(()=>{
-    const counts = {};
-    for(let x=0;x<COLS;x++){
-      const tile = board[row][x];
-      if(tile==null) continue;
-      counts[tile] = (counts[tile]||0)+1;
-      board[row][x]=null;
-    }
-
-    // Bonus de evolución si se eliminan fichas especiales (lobo)
-    if(counts[WOLF]){
-      if(players[owner].evo < 1){
-        players[owner].evo = 1;
-        showBubble(players[owner].name + ' obtuvo 1 punto de evolución!');
-      }
-    }
-
-    // Reparte energía SOLO a colores de criaturas del jugador
-    Object.keys(counts).forEach(color=>{
-      if(color === WOLF) return;
-      const cnt = counts[color];
-      awardEnergyToOwnerColor(owner, color, cnt);
-    });
-
-    applyGravity();
-    resolveBoard(owner, ()=>{ render(); ctx.onComplete(); });
-  },420);
-},
+    highlightBoardRow(row);
+    setTimeout(() => {
+        const tilesToClear = [];
+        for (let x = 0; x < COLS; x++) {
+            if (board[row][x] != null) {
+                tilesToClear.push({ y: row, x });
+            }
+        }
+        animateAndClearTiles(tilesToClear, owner, ctx.onComplete);
+    }, 420);
+  },
 
 
   // ===== Sombra =====
@@ -1018,6 +978,7 @@ let selectedCell = null;
 let extraTurnsThisTurn = 0;
 let turnSeconds = TURN_SECONDS;
 let timerId = null;
+let isBoardLocked = false; // 🌟 NUEVO: Bloqueador de interacciones durante animaciones
 
 /* selection screen state */
 let p1Selected = [], p2Selected = [];
@@ -1280,53 +1241,148 @@ function processGroupsForOwner(groups, ownerIndex){
   });
 }
 /* ================= Gravity ================= */
-function applyGravity(){
-  for(let x=0;x<COLS;x++){
-    const col=[];
-    for(let y=ROWS-1;y>=0;y--) if(board[y][x]!=null) col.push(board[y][x]);
-    while(col.length < ROWS){
-      let tile, tries=0;
-      do {
-        tile = randTile();
-        tries++;
-        if(tries>60) break;
-      } while(col.length>=2 && col[col.length-1]===tile && col[col.length-2]===tile);
-      col.push(tile);
+function applyGravity() {
+    const newTiles = [];
+    for (let x = 0; x < COLS; x++) {
+        const col = [];
+        for (let y = ROWS - 1; y >= 0; y--) if (board[y][x] != null) col.push(board[y][x]);
+        const originalLength = col.length;
+        while (col.length < ROWS) {
+            let tile, tries = 0;
+            do {
+                tile = randTile();
+                tries++;
+                if (tries > 60) break;
+            } while (col.length >= 2 && col[col.length - 1] === tile && col[col.length - 2] === tile);
+            col.push(tile);
+        }
+        for (let y = ROWS - 1, i = 0; y >= 0; y--, i++) {
+            board[y][x] = col[i];
+            if (i >= originalLength) {
+                newTiles.push({ x, y });
+            }
+        }
     }
-    for(let y=ROWS-1,i=0;y>=0;y--,i++) board[y][x] = col[i];
-  }
+    return newTiles;
 }
 
 /* ================= Resolve board with owner attribution & cascades ================= */
-function resolveBoard(initialOwner, cb){
-  // handle initial groups -> initialOwner, then cascades -> other player alternating
-  const processAll = (ownerStart, done) => {
-    let owner = ownerStart;
-    const step = () => {
-      const groups = findMatchGroups(board);
-      if(groups.length === 0){ done(); return; }
-      processGroupsForOwner(groups, owner);
-      // remove
-      const rem = new Set();
-      groups.forEach(g => g.coords.forEach(p => rem.add(p.y+','+p.x)));
-      rem.forEach(k => { const [y,x]=k.split(',').map(Number); board[y][x]=null; });
-      applyGravity();
-      owner = 1 - owner; // cascades go to opponent
-      setTimeout(step, 200);
-    };
-    step();
-  };
+/* ================= 🌟 ANIMATION-DRIVEN BOARD RESOLUTION 🌟 ================= */
+function resolveBoard(initialOwner, cb) {
+    isBoardLocked = true;
 
-  const initGroups = findMatchGroups(board);
-  if(initGroups.length === 0){ if(cb) cb(); return; }
-  processGroupsForOwner(initGroups, initialOwner);
-  // remove initial
-  const remInit = new Set();
-  initGroups.forEach(g=>g.coords.forEach(p=>remInit.add(p.y+','+p.x)));
-  remInit.forEach(k=>{ const [y,x]=k.split(',').map(Number); board[y][x]=null; });
-  applyGravity();
-  const next = 1 - initialOwner;
-  setTimeout(()=> processAll(next, ()=>{ render(); if(cb) cb(); }), 200);
+    const processCascades = (owner) => {
+        const groups = findMatchGroups(board);
+        if (groups.length === 0) {
+            isBoardLocked = false;
+            render();
+            if (cb) cb();
+            return;
+        }
+
+        processGroupsForOwner(groups, owner);
+        renderPlayers();
+
+        const tilesToDestroy = new Set();
+        groups.forEach(g => g.coords.forEach(p => tilesToDestroy.add(`${p.y},${p.x}`)));
+
+        const destructionPromises = [];
+        tilesToDestroy.forEach(key => {
+            const [y, x] = key.split(',').map(Number);
+            const cellEl = document.getElementById(`cell-${y}-${x}`);
+            if (cellEl) {
+                destructionPromises.push(new Promise(resolve => {
+                    cellEl.classList.add('destroying');
+                    setTimeout(() => resolve(), TILE_DESTROY_DURATION);
+                }));
+            }
+        });
+
+        Promise.all(destructionPromises).then(() => {
+            tilesToDestroy.forEach(key => {
+                const [y, x] = key.split(',').map(Number);
+                board[y][x] = null;
+            });
+
+            animateGravityAndRefill(() => {
+                processCascades(1 - owner); // Las cascadas alternan el propietario
+            });
+        });
+    };
+
+    processCascades(initialOwner);
+}
+
+function animateGravityAndRefill(onComplete) {
+    const fallMap = [];
+    for (let x = 0; x < COLS; x++) {
+        let emptyCount = 0;
+        for (let y = ROWS - 1; y >= 0; y--) {
+            if (board[y][x] === null) {
+                emptyCount++;
+            } else if (emptyCount > 0) {
+                fallMap.push({ fromY: y, toY: y + emptyCount, x });
+                board[y + emptyCount][x] = board[y][x];
+                board[y][x] = null;
+            }
+        }
+    }
+
+    const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cell-size'));
+    const gap = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gap'));
+
+    fallMap.forEach(({ fromY, toY, x }) => {
+        const cellEl = document.getElementById(`cell-${fromY}-${x}`);
+        if (cellEl) {
+            const drop = toY - fromY;
+            cellEl.style.transform = `translateY(${drop * (cellSize + gap)}px)`;
+            cellEl.id = `cell-${toY}-${x}`; // Actualiza el ID para futuras referencias
+        }
+    });
+
+    const newTilesCoords = applyGravity();
+
+    setTimeout(() => {
+        renderBoard(newTilesCoords);
+        if (onComplete) {
+            setTimeout(onComplete, 100);
+        }
+    }, TILE_FALL_DURATION);
+}
+
+function animateAndClearTiles(tilesToClear, owner, cb) {
+    isBoardLocked = true;
+    const counts = {};
+    tilesToClear.forEach(({ y, x }) => {
+        const tile = board[y][x];
+        if (tile) {
+            counts[tile] = (counts[tile] || 0) + 1;
+            const cellEl = document.getElementById(`cell-${y}-${x}`);
+            if(cellEl) cellEl.classList.add('destroying');
+        }
+    });
+
+    setTimeout(() => {
+        Object.keys(counts).forEach(color => {
+            if (color === WOLF) {
+                if(players[owner].evo < 1) {
+                    players[owner].evo = 1;
+                    showBubble(players[owner].name + ' obtuvo 1 punto de evolución!');
+                }
+            } else {
+                awardEnergyToOwnerColor(owner, color, counts[color]);
+            }
+        });
+        renderPlayers();
+
+        tilesToClear.forEach(({ y, x }) => {
+            board[y][x] = null;
+        });
+
+        animateGravityAndRefill(() => {
+            resolveBoard(owner, cb);
+        });
+    }, TILE_DESTROY_DURATION);
 }
 
 /* ================= RENDER ================= */
@@ -1341,43 +1397,54 @@ function render(){
 }
 
 /* Render board with solid colors and no letters (except wolf) */
-function renderBoard(){
-  const boardEl = document.getElementById('board'); boardEl.innerHTML='';
-  for(let y=0;y<ROWS;y++){
-    for(let x=0;x<COLS;x++){
-      const tile = board[y][x];
-      const div = document.createElement('div'); div.className='cell';
-      div.dataset.x = x; div.dataset.y = y;
-      if(tile === WOLF){
-        div.classList.add('lobo');
-        div.textContent = '🐺';
-        div.style.background = '#444';
-        div.style.color = '#fff';
-      } else if(tile){
-        div.classList.add(tile);
-        let tileColor = '';
-        // look up color from CREATURES (tile key might match creature keys or tile types)
-        if(CREATURES[tile] && CREATURES[tile].color) tileColor = CREATURES[tile].color;
-        else if(TILE_TYPES.includes(tile)){
-          // find a creature with that tileColor for color if exists, fallback to named
-          const found = Object.values(CREATURES).find(c=>c.tileColor===tile);
-          tileColor = found ? found.color : '';
+function renderBoard(newTilesCoords = []) {
+    const boardEl = document.getElementById('board');
+    boardEl.innerHTML = '';
+    const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cell-size'));
+    const gap = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gap'));
+
+    for (let y = 0; y < ROWS; y++) {
+        for (let x = 0; x < COLS; x++) {
+            const tile = board[y][x];
+            if (tile === null) continue;
+
+            const div = document.createElement('div');
+            div.className = 'cell';
+            div.id = `cell-${y}-${x}`;
+            div.dataset.x = x;
+            div.dataset.y = y;
+            div.style.left = `${x * (cellSize + gap)}px`;
+            div.style.top = `${y * (cellSize + gap)}px`;
+            div.style.width = `var(--cell-size)`;
+            div.style.height = `var(--cell-size)`;
+
+            if (newTilesCoords.some(coord => coord.x === x && coord.y === y)) {
+                div.classList.add('new-tile');
+            }
+
+            if (tile === WOLF) {
+                div.classList.add('lobo');
+                div.textContent = '🐺';
+                div.style.background = '#444';
+                div.style.color = '#fff';
+            } else if (tile) {
+                div.classList.add(tile);
+                let tileColor = '';
+                const creatureData = Object.values(CREATURES).find(c => c.tileColor === tile);
+                tileColor = creatureData ? creatureData.color : '';
+
+                if (!tileColor) {
+                    const map = { agua: '#3b82f6', fuego: '#ef4444', trueno: '#eab308', naturaleza: '#22c55e', sombra: '#9333ea' };
+                    tileColor = map[tile] || '#333';
+                }
+                div.style.background = tileColor;
+                div.textContent = '';
+            }
+            if (selectedCell && selectedCell.x === x && selectedCell.y === y) div.classList.add('selected');
+            div.addEventListener('click', () => onCellClick(x, y));
+            boardEl.appendChild(div);
         }
-        if(!tileColor){
-          // fallback mapping
-          const map = { agua:'#3b82f6', fuego:'#ef4444', trueno:'#eab308', naturaleza:'#22c55e', sombra:'#9333ea' };
-          tileColor = map[tile] || '#333';
-        }
-        div.style.background = tileColor;
-        div.textContent = '';
-      } else {
-        div.classList.add('empty'); div.style.background = '#081028'; div.textContent = '';
-      }
-      if(selectedCell && selectedCell.x===x && selectedCell.y===y) div.classList.add('selected');
-      div.addEventListener('click', ()=> onCellClick(x,y));
-      boardEl.appendChild(div);
     }
-  }
 }
 
 /* Render players and creature cards with bars, buttons, attack descriptions */
@@ -1485,20 +1552,39 @@ function renderPlayers(){
 }
 
 /* ================= Interaction: moving tiles ================= */
-function onCellClick(x,y){
-  if(!selectedCell){ selectedCell = {x,y}; renderBoard(); return; }
-  const dx = Math.abs(selectedCell.x - x), dy = Math.abs(selectedCell.y - y);
-  if((dx===1 && dy===0) || (dx===0 && dy===1)){
-    // swap
-    [board[selectedCell.y][selectedCell.x], board[y][x]] = [board[y][x], board[selectedCell.y][selectedCell.x]];
-    selectedCell = null;
-    movesLeft = Math.max(0, movesLeft - 1);
-    players[currentPlayer].moves = Math.max(0, players[currentPlayer].moves - 1);
-    resolveBoard(currentPlayer, ()=>{ render(); if(movesLeft <= 0) endTurn(); });
-    resetTimer();
-  } else {
-    selectedCell = {x,y}; renderBoard();
-  }
+function onCellClick(x, y) {
+    if (isBoardLocked) return;
+    if (!selectedCell) {
+        selectedCell = { x, y };
+        renderBoard();
+        return;
+    }
+
+    const dx = Math.abs(selectedCell.x - x), dy = Math.abs(selectedCell.y - y);
+    if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
+        // Intercambia las fichas en el array de datos
+        [board[selectedCell.y][selectedCell.x], board[y][x]] = [board[y][x], board[selectedCell.y][selectedCell.x]];
+
+        // Comprueba si el intercambio crea una combinación
+        if (findMatchGroups(board).length > 0) {
+            movesLeft = Math.max(0, movesLeft - 1);
+            players[currentPlayer].moves = Math.max(0, players[currentPlayer].moves - 1);
+            render(); // Renderiza el intercambio primero
+            selectedCell = null;
+            resolveBoard(currentPlayer, () => {
+                if (movesLeft <= 0) endTurn();
+            });
+            resetTimer();
+        } else {
+            // Si no hay combinación, deshaz el intercambio
+            [board[selectedCell.y][selectedCell.x], board[y][x]] = [board[y][x], board[selectedCell.y][selectedCell.x]];
+            selectedCell = { x, y };
+            renderBoard();
+        }
+    } else {
+        selectedCell = { x, y };
+        renderBoard();
+    }
 }
 
 /* ================= Attack flow: choose target clicking enemy creature ================= */
