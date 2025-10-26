@@ -51,7 +51,7 @@
   .panel{width:320px;background:#071233;padding:12px;border-radius:12px}
   #boardPanel{flex:1;display:flex;flex-direction:column;align-items:center}
 
-  .board{display:grid;grid-template-columns:repeat(8,var(--cell-size));grid-auto-rows:var(--cell-size);gap:var(--gap);background:rgba(255,255,255,0.02);padding:10px;border-radius:12px}
+  .board{background:rgba(255,255,255,0.02);padding:10px;border-radius:12px;position:relative}
   .cell{border-radius:10px;display:flex;align-items:center;justify-content:center;user-select:none;font-weight:700;transition:transform .12s,filter .18s}
   .cell:hover{transform:translateY(-3px)}
   .cell.empty{background:#081028;color:transparent}
@@ -346,18 +346,19 @@
     box-sizing: border-box;
   }
 
-  #board {
-    width: 90vw;
-    max-width: 400px;
-    aspect-ratio: 1 / 1;
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    grid-template-rows: repeat(8, 1fr);
-    gap: 3px;
+  .board, #board { /* Aplicamos a ambas para asegurar la compatibilidad */
+   width: 90vw;
+   max-width: 400px;
+   aspect-ratio: 1 / 1;
+    /* Eliminamos las propiedades de grid y gap */
+   padding: 3px; /* Usamos padding en vez de gap */
+   gap: 0;
   }
 
-  .cell{border-radius:10px;display:flex;align-items:center;justify-content:center;user-select:none;font-weight:700;transition:transform .3s ease-out, filter .18s; position: absolute;}
-  .cell:hover{filter:brightness(1.2)}
+ .cell {
+   border-radius: 4px;
+   font-size: 0.8rem;
+  }
 
   /* Pantallas muy pequeñas */
   @media (max-width: 380px) {
@@ -383,13 +384,11 @@
     gap: 2px;
   }
 
-  #board {
-    width: 95%;
-    height: 95%;
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    grid-template-rows: repeat(8, 1fr);
-    gap: 2px;
+  .board, #board {
+   width: 95%;
+   height: 95%;
+   padding: 2px; /* Usamos padding en vez de gap */
+   gap: 0;
   }
 
   /* Jugador 1 a la izquierda, Jugador 2 a la derecha */
@@ -1327,15 +1326,18 @@ function animateGravityAndRefill(onComplete) {
             }
         }
     }
-
-    const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cell-size'));
-    const gap = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gap'));
+    
+    // 🌟 Mide el tablero para calcular la distancia de caída correctamente
+    const boardEl = document.getElementById('board');
+    const boardSize = boardEl.clientWidth;
+    const cellSize = boardSize / COLS;
 
     fallMap.forEach(({ fromY, toY, x }) => {
         const cellEl = document.getElementById(`cell-${fromY}-${x}`);
         if (cellEl) {
             const drop = toY - fromY;
-            cellEl.style.transform = `translateY(${drop * (cellSize + gap)}px)`;
+            // 🌟 Usa el tamaño de celda dinámico para la animación
+            cellEl.style.transform = `translateY(${drop * cellSize}px)`;
             cellEl.id = `cell-${toY}-${x}`; // Actualiza el ID para futuras referencias
         }
     });
@@ -1400,8 +1402,10 @@ function render(){
 function renderBoard(newTilesCoords = []) {
     const boardEl = document.getElementById('board');
     boardEl.innerHTML = '';
-    const cellSize = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--cell-size'));
-    const gap = parseInt(getComputedStyle(document.documentElement).getPropertyValue('--gap'));
+    
+    // 🌟 Mide el tamaño real del tablero y calcula el tamaño de cada celda
+    const boardSize = boardEl.clientWidth;
+    const cellSize = boardSize / COLS;
 
     for (let y = 0; y < ROWS; y++) {
         for (let x = 0; x < COLS; x++) {
@@ -1413,10 +1417,12 @@ function renderBoard(newTilesCoords = []) {
             div.id = `cell-${y}-${x}`;
             div.dataset.x = x;
             div.dataset.y = y;
-            div.style.left = `${x * (cellSize + gap)}px`;
-            div.style.top = `${y * (cellSize + gap)}px`;
-            div.style.width = `var(--cell-size)`;
-            div.style.height = `var(--cell-size)`;
+            
+            // 🌟 Posiciona y dimensiona cada celda dinámicamente
+            div.style.left = `${x * cellSize}px`;
+            div.style.top = `${y * cellSize}px`;
+            div.style.width = `${cellSize}px`;
+            div.style.height = `${cellSize}px`;
 
             if (newTilesCoords.some(coord => coord.x === x && coord.y === y)) {
                 div.classList.add('new-tile');
@@ -1426,21 +1432,16 @@ function renderBoard(newTilesCoords = []) {
                 div.classList.add('lobo');
                 div.textContent = '🐺';
                 div.style.background = '#444';
-                div.style.color = '#fff';
             } else if (tile) {
                 div.classList.add(tile);
                 let tileColor = '';
                 const creatureData = Object.values(CREATURES).find(c => c.tileColor === tile);
-                tileColor = creatureData ? creatureData.color : '';
-
-                if (!tileColor) {
-                    const map = { agua: '#3b82f6', fuego: '#ef4444', trueno: '#eab308', naturaleza: '#22c55e', sombra: '#9333ea' };
-                    tileColor = map[tile] || '#333';
-                }
+                tileColor = creatureData ? creatureData.color : '#333';
                 div.style.background = tileColor;
-                div.textContent = '';
             }
-            if (selectedCell && selectedCell.x === x && selectedCell.y === y) div.classList.add('selected');
+            if (selectedCell && selectedCell.x === x && selectedCell.y === y) {
+                 div.classList.add('selected');
+            }
             div.addEventListener('click', () => onCellClick(x, y));
             boardEl.appendChild(div);
         }
