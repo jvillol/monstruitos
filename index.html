@@ -50,10 +50,27 @@
   #gameArea{display:flex;gap:12px;align-items:flex-start;justify-content:space-between}
   .panel{width:320px;background:#071233;padding:12px;border-radius:12px}
   #boardPanel{flex:1;display:flex;flex-direction:column;align-items:center}
+  .board {
+  position: relative;
+  width: 400px; /* Tamaño base para escritorio */
+  max-width: 85vw; /* Asegura que no se desborde en pantallas pequeñas */
+  aspect-ratio: 1 / 1; /* Mantiene el tablero siempre cuadrado */
+  background: rgba(255, 255, 255, 0.02);
+  padding: 6px;
+  border-radius: 12px;
+  margin: 6px auto; /* Centra el tablero */
+ }
 
-  .board{background:rgba(255,255,255,0.02);padding:10px;border-radius:12px;position:relative}
-  .cell{border-radius:10px;display:flex;align-items:center;justify-content:center;user-select:none;font-weight:700;transition:transform .3s ease-out, filter .18s; position: absolute;}
-  .cell:hover{filter:brightness(1.2)}
+.cell {
+  position: absolute; /* Fundamental para que el JS posicione las fichas */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  font-weight: 700;
+  border-radius: 8px;
+  transition: transform 0.3s ease-out, filter 0.18s;
+ }
   .cell.empty{background:#081028;color:transparent}
   .cell.selected{outline:3px solid #ffd600;transform:scale(1.03)}
   .cell.lobo{color:#fff;font-size:18px}
@@ -337,22 +354,23 @@
 
   /* ----- TABLERO ----- */
   #boardPanel {
-    grid-column: 1 / -1;
-    grid-row: 2;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    width: 100%;
-    box-sizing: border-box;
+   grid-column: 1 / -1;
+   grid-row: 2;
+   display: flex;
+   justify-content: center;
+   align-items: center;
+   width: 100%;
+   box-sizing: border-box;
   }
 
-  .board, #board { /* Aplicamos a ambas para asegurar la compatibilidad */
-   width: 90vw;
-   max-width: 400px;
-   aspect-ratio: 1 / 1;
-    /* Eliminamos las propiedades de grid y gap */
-   padding: 3px; /* Usamos padding en vez de gap */
-   gap: 0;
+  .board, #board {
+   width: 92vw; /* Ajustamos el ancho para móvil */
+   padding: 3px;
+  }
+
+  .cell { /* <-- ESTA REGLA ES LA QUE FALTABA */
+     border-radius: 4px;
+     font-size: 0.8rem;
   }
 
   /* Pantallas muy pequeñas */
@@ -380,10 +398,10 @@
   }
 
   .board, #board {
-   width: 95%;
-   height: 95%;
-   padding: 2px; /* Usamos padding en vez de gap */
-   gap: 0;
+   width: auto; /* Dejamos que la altura defina el tamaño */
+   height: 90vh; /* Ajustamos la altura */
+   max-height: 90vh;
+   padding: 2px;
   }
 
   /* Jugador 1 a la izquierda, Jugador 2 a la derecha */
@@ -1427,8 +1445,10 @@ function renderBoard(newTilesCoords = []) {
     const boardEl = document.getElementById('board');
     boardEl.innerHTML = '';
     
-    // 🌟 Mide el tamaño real del tablero y calcula el tamaño de cada celda
     const boardSize = boardEl.clientWidth;
+    // 🌟 LÍNEA DE SEGURIDAD AÑADIDA 🌟
+    if (boardSize <= 0) return; // Si el tablero no tiene tamaño, no intentes dibujar.
+    
     const cellSize = boardSize / COLS;
 
     for (let y = 0; y < ROWS; y++) {
