@@ -1599,7 +1599,7 @@ function renderPlayers(){
 
 /* ================= Interaction: moving tiles ================= */
 /**
- * 🌟 ONCELLCLICK ACTUALIZADO
+ * 🌟 ONCELLCLICK ACTUALIZADO (Permite movimientos sin combinación)
  */
 function onCellClick(x,y){
     if (isBoardLocked) return; // No hacer nada si el tablero está animándose
@@ -1611,29 +1611,35 @@ function onCellClick(x,y){
 
     const dx = Math.abs(selectedCell.x - x), dy = Math.abs(selectedCell.y - y);
     if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
-        // Intercambia
+        
+        // --- 1. Realizar el intercambio SIEMPRE ---
         [board[selectedCell.y][selectedCell.x], board[y][x]] = [board[y][x], board[selectedCell.y][selectedCell.x]];
         
-        // Comprueba si el movimiento es válido
+        // --- 2. Gastar el movimiento SIEMPRE ---
+        movesLeft = Math.max(0, movesLeft - 1);
+        players[currentPlayer].moves = Math.max(0, players[currentPlayer].moves - 1);
+        selectedCell = null;
+        resetTimer();
+
+        // --- 3. Comprobar si hay combinación ---
         const groups = findMatchGroups(board);
+        
         if (groups.length > 0) {
-            // Movimiento VÁLIDO
-            movesLeft = Math.max(0, movesLeft - 1);
-            players[currentPlayer].moves = Math.max(0, players[currentPlayer].moves - 1);
-            selectedCell = null;
-            // Inicia la secuencia de animación
+            // --- SÍ HAY COMBINACIÓN: Iniciar cascada ---
+            // La cascada se encargará de llamar a endTurn si es necesario
             resolveBoard(currentPlayer, () => {
                 render();
                 if (movesLeft <= 0) endTurn();
             });
-            resetTimer();
         } else {
-            // Movimiento INVÁLIDO, deshacer
-            [board[selectedCell.y][selectedCell.x], board[y][x]] = [board[y][x], board[selectedCell.y][selectedCell.x]];
-            selectedCell = { x, y };
-            renderBoard();
+            // --- NO HAY COMBINACIÓN: Renderizar y comprobar fin de turno ---
+            renderBoard(); // Simplemente renderiza el tablero con el cambio
+            if (movesLeft <= 0) {
+                endTurn();
+            }
         }
     } else {
+        // Clic en una celda no adyacente, solo re-selecciona
         selectedCell = { x, y };
         renderBoard();
     }
