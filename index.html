@@ -1328,7 +1328,7 @@ function animateGravityAndRefill(onComplete) {
 }
 
 /**
- * 🌟 3. ORQUESTADOR PRINCIPAL DE CASCADAS (REEMPLAZA A `resolveBoard` ORIGINAL)
+ * 🌟 3. ORQUESTADOR PRINCIPAL DE CASCADAS (VERSIÓN CORREGIDA)
  */
 function resolveBoard(initialOwner, cb) {
     isBoardLocked = true;
@@ -1336,17 +1336,19 @@ function resolveBoard(initialOwner, cb) {
     const processCascades = (owner) => {
         const groups = findMatchGroups(board);
         if (groups.length === 0) {
+            // --- INICIO DE LA CORRECCIÓN ---
             // No hay más combinaciones, termina el proceso
-            isBoardLocked = false;
-            if (cb) cb();
+            isBoardLocked = false; // 1. Desbloquea el tablero PRIMERO
+            if (cb) cb();          // 2. Llama al callback DESPUÉS
+            // --- FIN DE LA CORRECIÓN ---
             return;
         }
 
-        // 1. Dar puntos y energía por las combinaciones encontradas
+        // 1. Dar puntos y energía
         processGroupsForOwner(groups, owner);
-        renderPlayers(); // Actualiza la UI de los jugadores
+        renderPlayers(); 
 
-        // 2. Animar la destrucción de las fichas
+        // 2. Animar la destrucción
         const tilesToDestroy = new Set();
         groups.forEach(g => g.coords.forEach(p => tilesToDestroy.add(`${p.y},${p.x}`)));
 
@@ -1369,7 +1371,7 @@ function resolveBoard(initialOwner, cb) {
             // 5. Iniciar la animación de gravedad y rellenado
             animateGravityAndRefill(() => {
                 // 6. Volver a comprobar si hay nuevas cascadas
-                processCascades(1 - owner); // Las cascadas alternan el propietario
+                processCascades(1 - owner); 
             });
         }, TILE_DESTROY_DURATION);
     };
@@ -1626,9 +1628,9 @@ function onCellClick(x,y){
         
         if (groups.length > 0) {
             // --- SÍ HAY COMBINACIÓN: Iniciar cascada ---
-            // La cascada se encargará de llamar a endTurn si es necesario
+            // resolveBoard se encargará de desbloquear y llamar al callback
             resolveBoard(currentPlayer, () => {
-                render();
+                render(); // Renderiza el estado final
                 if (movesLeft <= 0) endTurn();
             });
         } else {
@@ -1644,7 +1646,6 @@ function onCellClick(x,y){
         renderBoard();
     }
 }
-
 
 /* ================= Attack flow: choose target clicking enemy creature ================= */
 function selectAttackTarget(pi,ci){
