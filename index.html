@@ -51,8 +51,8 @@
   .panel{width:320px;background:#071233;padding:12px;border-radius:12px}
   #boardPanel{flex:1;display:flex;flex-direction:column;align-items:center}
 
-  .board{display:grid;grid-template-columns:repeat(8,var(--cell-size));grid-auto-rows:var(--cell-size);gap:var(--gap);background:rgba(255,255,255,0.02);padding:10px;border-radius:12px}
-  .cell{border-radius:10px;display:flex;align-items:center;justify-content:center;user-select:none;font-weight:700;transition:transform .12s,filter .18s}
+  .board{position:relative; width: 400px; max-width: 85vw; aspect-ratio: 1 / 1; background:rgba(255,255,255,0.02);padding:10px;border-radius:12px}
+  .cell{position:absolute;border-radius:10px;display:flex;align-items:center;justify-content:center;user-select:none;font-weight:700;transition:transform .3s ease-out, filter .18s}
   .cell:hover{transform:translateY(-3px)}
   .cell.empty{background:#081028;color:transparent}
   .cell.selected{outline:3px solid #ffd600;transform:scale(1.03)}
@@ -131,7 +131,22 @@
   50% { opacity: 1; transform: scale(1) rotate(0deg); }
   100% { opacity: 0; transform: scale(1.1) rotate(-10deg); }
 }
+/* === 🌟 NUEVAS ANIMACIONES DE FICHAS 🌟 === */
+.cell.destroying {
+  animation: destroyTile 0.3s ease-out forwards;
+}
+@keyframes destroyTile {
+  0% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.2); opacity: 0; }
+}
 
+.cell.new-tile {
+  animation: newTileFall 0.4s ease-out;
+}
+@keyframes newTileFall {
+  from { transform: translateY(-300px); } /* Caída desde más arriba */
+  to { transform: translateY(0); }
+}
   .creature{display:flex;gap:10px;align-items:center;padding:8px;border-radius:10px;background:rgba(255,255,255,0.02);margin-bottom:8px}
   .creature img{width:56px;height:56px;border-radius:8px;object-fit:cover}
   .creaInfo{flex:1;min-width:0}
@@ -331,13 +346,14 @@
   }
 
   #board {
-    width: 90vw;
-    max-width: 400px;
-    aspect-ratio: 1 / 1;
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    grid-template-rows: repeat(8, 1fr);
-    gap: 3px;
+   width: 90vw;
+   max-width: 400px;
+   aspect-ratio: 1 / 1;
+   /* display: grid; */ /* Eliminado */
+   /* grid-template-columns: repeat(8, 1fr); */ /* Eliminado */
+   /* grid-template-rows: repeat(8, 1fr); */ /* Eliminado */
+   gap: 0;
+   padding: 3px;
   }
 
   .cell {
@@ -370,12 +386,13 @@
   }
 
   #board {
-    width: 95%;
-    height: 95%;
-    display: grid;
-    grid-template-columns: repeat(8, 1fr);
-    grid-template-rows: repeat(8, 1fr);
-    gap: 2px;
+   width: 95%;
+   height: 95%;
+   /* display: grid; */ /* Eliminado */
+   /* grid-template-columns: repeat(8, 1fr); */ /* Eliminado */
+   /* grid-template-rows: repeat(8, 1fr); */ /* Eliminado */
+   gap: 0;
+   padding: 2px;
   }
 
   /* Jugador 1 a la izquierda, Jugador 2 a la derecha */
@@ -440,25 +457,7 @@ img,svg,canvas{max-width:100%;height:auto;display:block}
   flex-shrink: 0;
   box-sizing: border-box;
 }
-#board, .board {
-  width: min(720px, 85vw);
-  aspect-ratio: 1 / 1;
-  display: grid;
-  grid-template-columns: repeat(8, 1fr);
-  grid-auto-rows: 1fr;
-  gap: var(--gap);
-  padding: 6px;
-  border-radius: 12px;
-  margin: 6px 0;
-}
-.cell{
-  width:100%;
-  height:100%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  border-radius:8px;
-}
+
 #gameScreen{
   min-height:100vh;
   overflow:auto;
@@ -658,6 +657,8 @@ const TURN_SECONDS = 120;
 const WARNING_SECONDS = 20;
 const MAX_EXTRA_PER_TURN = 2;
 const MAX_ENERGY_POINTS = 5; // cap energy points visually (per earlier req)
+const TILE_DESTROY_DURATION = 300;
+const TILE_FALL_DURATION = 300;
 
 const ENERGY_COSTS = {
   agua: 20,
@@ -691,7 +692,6 @@ const CREATURES = {
   terragorn: { name:'Terragorn', type:'naturaleza', tileColor:'naturaleza', attack:'Telúrico: 20 daño + elimina fila y columna',       power:'naturaleza', color:'#4ade80', img:'img/criaturas/terragorn.png',  imgEvo:'img/criaturas/terragorn_evo.png',  cost:20 },
   columnus:  { name:'Columnus',  type:'naturaleza', tileColor:'naturaleza', attack:'Columnus: 20 daño + elimina fila',                 power:'naturaleza', color:'#16a34a', img:'img/criaturas/columnus.png',   imgEvo:'img/criaturas/columnus_evo.png',   cost:16 },
   sombra:    { name:'Sombra',    type:'sombra',     tileColor:'sombra',     attack:'Sombra: 20 daño + roba energía',                   power:'sombra',     color:'#6b7280', img:'img/criaturas/sombra.png',     imgEvo:'img/criaturas/sombra_evo.png',     cost:16 },
-  
 };
 
 /* ================= POWERS (attack logic) =================
@@ -707,146 +707,109 @@ function applyDamage(target, amount) {
 }
 
 const POWERS = {
-  // Generic-type actions
+  // --- Fallbacks genéricos (Mantenidos de tu código) ---
   agua: (attacker,target,ctx) => { applyDamage(target, 40); ctx.onComplete(); },
-  aqualis: (attacker,target,ctx) => { applyDamage(target, 40); ctx.onComplete(); },
-  cryon: (attacker,target,ctx) => { applyDamage(target, 40); ctx.onComplete(); },
   fuego: (attacker,target,ctx) => { applyDamage(target, 30); target.burned = true; ctx.onComplete(); },
-  ignarok: (attacker,target,ctx) => { applyDamage(target, 30); target.burned = true; ctx.onComplete(); },
-  volcanus: (attacker,target,ctx) => { applyDamage(target, 30); target.burned = true; ctx.onComplete(); },
   trueno: (attacker,target,ctx) => { applyDamage(target, 25); attacker.hp = Math.min(MAX_HP, attacker.hp + 10); ctx.onComplete(); },
-  luminar: (attacker,target,ctx) => { applyDamage(target, 25); attacker.hp = Math.min(MAX_HP, attacker.hp + 10); ctx.onComplete(); },
-  electros: (attacker,target,ctx) => { applyDamage(target, 25); attacker.hp = Math.min(MAX_HP, attacker.hp + 10); ctx.onComplete(); },
   naturaleza: (attacker,target,ctx) => { applyDamage(target, 20); attacker.hp = Math.min(MAX_HP, attacker.hp + 10); ctx.onComplete(); },
-  columnus: (attacker,target,ctx) => { applyDamage(target, 20); attacker.hp = Math.min(MAX_HP, attacker.hp + 10); ctx.onComplete(); },
-  sylphora: (attacker,target,ctx) => { applyDamage(target, 20); attacker.hp = Math.min(MAX_HP, attacker.hp + 10); ctx.onComplete(); },
-  sombra: (attacker,target,ctx) => { applyDamage(target, 20); target.energy = Math.max(0, target.energy - 2);  attacker.energy = Math.min(attacker.energy + 2, Math.ceil(ENERGY_COSTS[attacker.type] / (attacker.evolved ? 2 : 1)));
+
+  // --- Poderes Específicos de Criaturas ---
+ 
+  // ===== Agua =====
+  aqualis: (attacker, target, ctx) => {
+    target.hp -= 40; // Daño fuerte
     ctx.onComplete();
   },
 
-/* ================= POWERS (attack logic) =================
-   Cada criatura ahora funciona como "Sombra":
-   - Hace daño base
-   - Aplica efecto especial
-   - Siempre llama a ctx.onComplete()
-*/
- // ===== Agua =====
-aqualis: (attacker, target, ctx) => {
-  target.hp -= 40; // Daño fuerte
-  ctx.onComplete();
-},
+  cryon: (attacker, target, ctx) => {
+    target.hp -= 20;
+    const owner = ctx.ownerIndex;
+    const counts = {};
 
-cryon: (attacker, target, ctx) => {
-  target.hp -= 20;
-  const owner = ctx.ownerIndex;
-  const counts = {};
-
-  // Recolectar todas las posiciones que NO sean ya 'agua' y no sean null
-  const candidates = [];
-  for (let y = 0; y < ROWS; y++) {
-    for (let x = 0; x < COLS; x++) {
-      const t = board[y][x];
-      if (t != null && t !== 'agua') candidates.push({ x, y });
-    }
-  }
-
-  if (candidates.length > 0) {
-    // Barajar (Fisher-Yates)
-    for (let i = candidates.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      const tmp = candidates[i];
-      candidates[i] = candidates[j];
-      candidates[j] = tmp;
-    }
-
-    // Convertir hasta 3 posiciones únicas
-    const toConvert = Math.min(3, candidates.length);
-    const converted = [];
-
-    for (let i = 0; i < toConvert; i++) {
-      const pos = candidates[i];
-      const oldTile = board[pos.y][pos.x];
-
-      if (oldTile && oldTile !== 'agua') {
-        counts[oldTile] = (counts[oldTile] || 0) + 1;
-        converted.push(pos);
+    const candidates = [];
+    for (let y = 0; y < ROWS; y++) {
+      for (let x = 0; x < COLS; x++) {
+        const t = board[y][x];
+        if (t != null && t !== 'agua') candidates.push({ x, y });
       }
     }
 
-    // Aplicar efecto visual antes de convertirlas
-    converted.forEach(pos => {
-      const cellEl = document.getElementById(`cell-${pos.y}-${pos.x}`);
-      if (cellEl) {
-        cellEl.classList.add('flash-blue');
-        setTimeout(() => {
-          cellEl.classList.remove('flash-blue');
+    if (candidates.length > 0) {
+      for (let i = candidates.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        const tmp = candidates[i];
+        candidates[i] = candidates[j];
+        candidates[j] = tmp;
+      }
+
+      const toConvert = Math.min(3, candidates.length);
+      const converted = [];
+
+      for (let i = 0; i < toConvert; i++) {
+        const pos = candidates[i];
+        const oldTile = board[pos.y][pos.x];
+
+        if (oldTile && oldTile !== 'agua') {
+          counts[oldTile] = (counts[oldTile] || 0) + 1;
+          converted.push(pos);
+        }
+      }
+
+      converted.forEach(pos => {
+        const cellEl = document.getElementById(`cell-${pos.y}-${pos.x}`);
+        if (cellEl) {
+          cellEl.classList.add('flash-blue');
+          setTimeout(() => {
+            cellEl.classList.remove('flash-blue');
+            board[pos.y][pos.x] = 'agua';
+            render();
+          }, 250); 
+        } else {
           board[pos.y][pos.x] = 'agua';
-          render();
-        }, 250); // medio segundo de parpadeo
-      } else {
-        board[pos.y][pos.x] = 'agua';
-      }
-    });
+        }
+      });
 
-    // Dar energía según las fichas convertidas
-    Object.keys(counts).forEach(color => {
-      if (color === WOLF) return; // nunca sumar energía por lobos
-      awardEnergyToOwnerColor(owner, color, counts[color]);
-    });
-  }
+      Object.keys(counts).forEach(color => {
+        if (color === WOLF) return;
+        awardEnergyToOwnerColor(owner, color, counts[color]);
+      });
+    }
 
-  setTimeout(() => {
-    render();
-    ctx.onComplete();
-  }, 300);
-},
+    setTimeout(() => {
+      render();
+      ctx.onComplete();
+    }, 300);
+  },
 
-    ignarok: (attacker,target,ctx) => {
+  ignarok: (attacker,target,ctx) => {
     target.hp -= 30;
-
-    // Aplica estado de quemadura al objetivo (2 turnos de quemadura)
     target.burnedTurns = 2;
-
-    // Mensaje para el jugador
     showBubble(`${target.nombre} ha sido quemado!`);
-
-    // Si la quemadura o el daño ya lo dejan en 0, marcar como eliminado
     if (target.hp <= 0) {
       target.hp = 0;
     }
-
     render();
     checkWin();
     ctx.onComplete();
   },
 
   volcanus: (attacker,target,ctx) => {
-  target.hp -= 35;
-  const owner = ctx.ownerIndex;
-  const col = Math.floor(Math.random()*COLS);
+    target.hp -= 35;
+    const owner = ctx.ownerIndex;
+    const col = Math.floor(Math.random()*COLS);
 
-  highlightBoardColumn(col);
+    highlightBoardColumn(col);
 
-  setTimeout(()=>{
-    const counts = {};
-    for(let y=0;y<ROWS;y++){
-      const tile = board[y][col];
-      if(tile==null) continue;
-      counts[tile] = (counts[tile]||0)+1;
-      board[y][col]=null;
-    }
-
-    // Reparte energía según fichas eliminadas
-    Object.keys(counts).forEach(color=>{
-      if(color === WOLF) return;
-      const cnt = counts[color];
-      awardEnergyToOwnerColor(owner, color, cnt);
-    });
-
-    applyGravity();
-    resolveBoard(owner, ()=>{ render(); ctx.onComplete(); });
-  },420);
-},
+    setTimeout(()=>{
+      const tilesToClear = [];
+      for(let y=0;y<ROWS;y++){
+        if(board[y][col] != null) {
+            tilesToClear.push({ y, x: col });
+        }
+      }
+      animateAndClearTiles(tilesToClear, owner, ctx.onComplete);
+    },420);
+  },
 
   // ===== Trueno =====
   luminar: (attacker,target,ctx) => {
@@ -854,123 +817,82 @@ cryon: (attacker, target, ctx) => {
     attacker.hp = Math.min(MAX_HP, attacker.hp + 10); // Cura al atacante
     ctx.onComplete();
   },
+  
   electros: (attacker,target,ctx) => {
-  target.hp -= 20;
-  const owner = ctx.ownerIndex;
-
-  const counts = {};
-  for(let y=0;y<ROWS;y++){
-    for(let x=0;x<COLS;x++){
-      if(board[y][x]==='trueno'){
-        counts['trueno'] = (counts['trueno']||0)+1;
-        board[y][x]=null;
+    target.hp -= 20;
+    const owner = ctx.ownerIndex;
+    const tilesToClear = [];
+    for(let y=0;y<ROWS;y++){
+      for(let x=0;x<COLS;x++){
+        if(board[y][x]==='trueno'){
+          tilesToClear.push({ y, x });
+        }
       }
     }
-  }
-
-  // Reparte energía por las fichas de trueno eliminadas
-  if(counts['trueno']){
-    awardEnergyToOwnerColor(owner, 'trueno', counts['trueno']);
-  }
-
-  applyGravity();
-  resolveBoard(owner, ()=>{ render(); ctx.onComplete(); });
-},
+    animateAndClearTiles(tilesToClear, owner, ctx.onComplete);
+  },
 
   sylphora: (attacker, target, ctx) => {
-  target.hp -= 20;
+    target.hp -= 20;
+    const opponentIndex = 1 - ctx.ownerIndex;
+    players[opponentIndex].skipMovePenalty = true;
 
-  // Marcar penalización de movimiento
-  const opponentIndex = 1 - ctx.ownerIndex;
-  players[opponentIndex].skipMovePenalty = true;
+    const affectedContainer = document.getElementById(
+      opponentIndex === 0 ? 'p1Creaturas' : 'p2Creaturas'
+    );
+    if (affectedContainer) {
+      affectedContainer.classList.add('vines-effect');
+      setTimeout(() => affectedContainer.classList.remove('vines-effect'), 1500);
+    }
 
-  // === 💚 EFECTO VISUAL DE ENREDADERAS ===
-  const affectedContainer = document.getElementById(
-    opponentIndex === 0 ? 'p1Creaturas' : 'p2Creaturas'
-  );
-  if (affectedContainer) {
-    affectedContainer.classList.add('vines-effect');
-    setTimeout(() => affectedContainer.classList.remove('vines-effect'), 1500);
-  }
-
-  showBubble(`${players[opponentIndex].name} ha sido atrapado por las enredaderas!`);
-  ctx.onComplete();
-},
+    showBubble(`${players[opponentIndex].name} ha sido atrapado por las enredaderas!`);
+    ctx.onComplete();
+  },
 
   terragorn: (attacker,target,ctx) => {
-  target.hp -= 20;
-  const owner = ctx.ownerIndex;
-  const row = Math.floor(Math.random()*ROWS);
-  const col = Math.floor(Math.random()*COLS);
+    target.hp -= 20;
+    const owner = ctx.ownerIndex;
+    const row = Math.floor(Math.random()*ROWS);
+    const col = Math.floor(Math.random()*COLS);
 
-  highlightBoardRow(row);
-  highlightBoardColumn(col);
+    highlightBoardRow(row);
+    highlightBoardColumn(col);
 
-  setTimeout(()=>{
-    const counts = {};
-    // fila
-    for(let x=0;x<COLS;x++){
-      const tile = board[row][x];
-      if(tile==null) continue;
-      counts[tile] = (counts[tile]||0)+1;
-      board[row][x]=null;
-    }
-    // columna
-    for(let y=0;y<ROWS;y++){
-      const tile = board[y][col];
-      if(tile==null) continue;
-      counts[tile] = (counts[tile]||0)+1;
-      board[y][col]=null;
-    }
-
-    // Reparte energía por todas las fichas destruidas
-    Object.keys(counts).forEach(color=>{
-      if(color === WOLF) return;
-      const cnt = counts[color];
-      awardEnergyToOwnerColor(owner, color, cnt);
-    });
-
-    applyGravity();
-    resolveBoard(owner, ()=>{ render(); ctx.onComplete(); });
-  },420);
-},
-
- columnus: (attacker,target,ctx) => {
-  target.hp -= 20;
-  const owner = ctx.ownerIndex;
-  const row = Math.floor(Math.random()*ROWS);
-
-  highlightBoardRow(row);
-
-  setTimeout(()=>{
-    const counts = {};
-    for(let x=0;x<COLS;x++){
-      const tile = board[row][x];
-      if(tile==null) continue;
-      counts[tile] = (counts[tile]||0)+1;
-      board[row][x]=null;
-    }
-
-    // Bonus de evolución si se eliminan fichas especiales (lobo)
-    if(counts[WOLF]){
-      if(players[owner].evo < 1){
-        players[owner].evo = 1;
-        showBubble(players[owner].name + ' obtuvo 1 punto de evolución!');
+    setTimeout(()=>{
+      const tilesToClearSet = new Set();
+      for(let x=0;x<COLS;x++){
+        if(board[row][x] != null) tilesToClearSet.add(`${row},${x}`);
       }
-    }
+      for(let y=0;y<ROWS;y++){
+        if(board[y][col] != null) tilesToClearSet.add(`${y},${col}`);
+      }
+      
+      const tilesToClear = Array.from(tilesToClearSet).map(s => {
+          const [y, x] = s.split(',').map(Number);
+          return { y, x };
+      });
 
-    // Reparte energía SOLO a colores de criaturas del jugador
-    Object.keys(counts).forEach(color=>{
-      if(color === WOLF) return;
-      const cnt = counts[color];
-      awardEnergyToOwnerColor(owner, color, cnt);
-    });
+      animateAndClearTiles(tilesToClear, owner, ctx.onComplete);
+    },420);
+  },
 
-    applyGravity();
-    resolveBoard(owner, ()=>{ render(); ctx.onComplete(); });
-  },420);
-},
+  columnus: (attacker,target,ctx) => {
+    target.hp -= 20;
+    const owner = ctx.ownerIndex;
+    const row = Math.floor(Math.random()*ROWS);
 
+    highlightBoardRow(row);
+
+    setTimeout(()=>{
+      const tilesToClear = [];
+      for(let x=0;x<COLS;x++){
+        if(board[row][x] != null) {
+            tilesToClear.push({ y: row, x });
+        }
+      }
+      animateAndClearTiles(tilesToClear, owner, ctx.onComplete);
+    },420);
+  },
 
   // ===== Sombra =====
   sombra: (attacker,target,ctx) => {
@@ -985,31 +907,73 @@ cryon: (attacker, target, ctx) => {
 };
 
 /* ================= PERFORM ATTACK (gestiona turnos y poderes) ================= */
-function performAttack(attacker, target, ownerIndex, targetIndex) {
-  const ctx = { 
-  board, 
-  ownerIndex: pi, 
-  onComplete: ()=>{ 
-    // gastar movimiento aquí
+// ESTA FUNCIÓN ESTÁ BIEN EN TU CÓDIGO, PERO LA INCLUYO PARA ASEGURARNOS
+function performAttack(pi,ci,targetIdx){
+  const attacker = players[pi].criaturas[ci];
+  const opponentIndex = 1 - pi;
+  const target = players[opponentIndex].criaturas[targetIdx];
+  const cost = Math.ceil(ENERGY_COSTS[attacker.type] / (attacker.evolved ? 2 : 1));
+  if(attacker.energy < cost) return;
+  attacker.energy = Math.max(0, attacker.energy - cost);
+
+  // Show attack message with creature name
+  showAttackMessage(`¡Ataque — ${attacker.nombre}!`, CREATURES[attacker.type].color || '#ff6b6b');
+
+  // projectile animation
+  const attackerEl = document.getElementById(`p${pi}-c${ci}`);
+  const defenderEl = document.getElementById(`p${opponentIndex}-c${targetIdx}`);
+  const attackerRect = attackerEl ? attackerEl.getBoundingClientRect() : null;
+  const defenderRect = defenderEl ? defenderEl.getBoundingClientRect() : null;
+
+  const proj = document.createElement('div'); proj.className='projectile';
+  proj.style.background = CREATURES[attacker.type].color || '#fff';
+  document.body.appendChild(proj);
+
+  let startX = window.innerWidth/2, startY = window.innerHeight/2;
+  if(attackerRect){ startX = attackerRect.left + attackerRect.width/2; startY = attackerRect.top + attackerRect.height/2; }
+  let endX = startX, endY = startY - 200;
+  if(defenderRect){ endX = defenderRect.left + defenderRect.width/2; endY = defenderRect.top + defenderRect.height/2; }
+
+  proj.style.left = (startX-11) + 'px'; proj.style.top = (startY-11) + 'px';
+  proj.animate([
+    { transform:`translate(0,0) scale(1)`, opacity:1 },
+    { transform:`translate(${endX-startX}px, ${endY-startY}px) scale(0.9)`, opacity:1 }
+  ], { duration: 700, easing: 'cubic-bezier(.2,.9,.2,1)' });
+
+  setTimeout(()=>{
+    proj.remove();
+    // 🌟 Lógica de finalización de acción
+    const onComplete = () => {
+        render(); 
+        checkWin();
+        if(movesLeft <= 0 && !isBoardLocked) {
+            endTurn();
+        } else {
+            isBoardLocked = false;
+        }
+    };
+
+    const ctx = { board, ownerIndex: currentPlayer, onComplete: onComplete };
+    
+    if(defenderEl){ defenderEl.classList.add('hit'); setTimeout(()=> defenderEl.classList.remove('hit'),450); }
+    
+    const powerFn = POWERS[ attacker.type ] || POWERS[ attacker.power ] || POWERS[ CREATURES[attacker.type] && CREATURES[attacker.type].tileColor ];
+    
+    // Gastar movimiento
     movesLeft = Math.max(0, movesLeft - 1);
     players[pi].moves = Math.max(0, players[pi].moves - 1);
+    resetTimer();
 
-    render(); 
-    checkWin(); 
-    if(movesLeft<=0) endTurn();
-    else resetTimer();
-  } 
-};
-
-  // Ejecutar el poder correcto
-  const powerFn = POWERS[attacker.power];
-  if (powerFn) {
-    powerFn(attacker, target, ctx);
-  } else {
-    console.warn("No se encontró poder para:", attacker.power);
-    ctx.onComplete();
-  }
+    if(powerFn) {
+        powerFn(attacker, target, ctx);
+    } else {
+        console.warn("No se encontró poder para:", attacker.power);
+        ctx.onComplete();
+    }
+    
+  }, 720);
 }
+
 /* ================= STATE ================= */
 let board = [];
 let players = []; // [{name,moves,evo,criaturas: [{type,nombre,tileColor,power,hp,energy,evolved}]}, ...]
@@ -1019,6 +983,7 @@ let selectedCell = null;
 let extraTurnsThisTurn = 0;
 let turnSeconds = TURN_SECONDS;
 let timerId = null;
+let isBoardLocked = false; // 🌟 Variable de estado para animaciones
 
 /* selection screen state */
 let p1Selected = [], p2Selected = [];
@@ -1280,54 +1245,181 @@ function processGroupsForOwner(groups, ownerIndex){
     }
   });
 }
-/* ================= Gravity ================= */
-function applyGravity(){
-  for(let x=0;x<COLS;x++){
-    const col=[];
-    for(let y=ROWS-1;y>=0;y--) if(board[y][x]!=null) col.push(board[y][x]);
-    while(col.length < ROWS){
-      let tile, tries=0;
-      do {
-        tile = randTile();
-        tries++;
-        if(tries>60) break;
-      } while(col.length>=2 && col[col.length-1]===tile && col[col.length-2]===tile);
-      col.push(tile);
+
+/* ================= 🌟 Gravity & Cascade Logic 🌟 ================= */
+
+/**
+ * 🌟 1. RELLENA EL ARRAY `board` CON FICHAS NUEVAS Y DEVUELVE SUS COORDENADAS
+ */
+function applyGravity() {
+    const newTiles = [];
+    for (let x = 0; x < COLS; x++) {
+        const col = [];
+        // Recoge las fichas existentes de abajo hacia arriba
+        for (let y = ROWS - 1; y >= 0; y--) {
+            if (board[y][x] != null) col.push(board[y][x]);
+        }
+        
+        const newTileCount = ROWS - col.length;
+        // Añade fichas nuevas para rellenar
+        for(let i=0; i < newTileCount; i++){
+            let tile, tries = 0;
+            do {
+                tile = randTile();
+                tries++;
+                if (tries > 60) break;
+            } while (col.length >= 2 && col[col.length - 1] === tile && col[col.length - 2] === tile);
+            col.push(tile);
+        }
+
+        // Reasigna la columna en el array de datos
+        for (let y = ROWS - 1, i = 0; y >= 0; y--, i++) {
+            board[y][x] = col[i];
+            // Si la ficha es nueva (índice > original), la marca para animación
+            if (i >= (ROWS - newTileCount)) {
+                newTiles.push({ x, y });
+            }
+        }
     }
-    for(let y=ROWS-1,i=0;y>=0;y--,i++) board[y][x] = col[i];
-  }
+    return newTiles; // Devuelve las coordenadas de las fichas nuevas
 }
 
-/* ================= Resolve board with owner attribution & cascades ================= */
-function resolveBoard(initialOwner, cb){
-  // handle initial groups -> initialOwner, then cascades -> other player alternating
-  const processAll = (ownerStart, done) => {
-    let owner = ownerStart;
-    const step = () => {
-      const groups = findMatchGroups(board);
-      if(groups.length === 0){ done(); return; }
-      processGroupsForOwner(groups, owner);
-      // remove
-      const rem = new Set();
-      groups.forEach(g => g.coords.forEach(p => rem.add(p.y+','+p.x)));
-      rem.forEach(k => { const [y,x]=k.split(',').map(Number); board[y][x]=null; });
-      applyGravity();
-      owner = 1 - owner; // cascades go to opponent
-      setTimeout(step, 200);
-    };
-    step();
-  };
+/**
+ * 🌟 2. MUEVE FICHAS EXISTENTES HACIA ABAJO Y RELLENA HUECOS
+ */
+function animateGravityAndRefill(onComplete) {
+    const boardEl = document.getElementById('board');
+    const style = getComputedStyle(boardEl);
+    const padding = parseInt(style.paddingLeft);
+    const contentWidth = boardEl.clientWidth - (padding * 2);
+    
+    // Cálculo de tamaño de celda y hueco (basado en --cell-size y --gap)
+    const cellSize = contentWidth * (44 / 394);
+    const gap = contentWidth * (6 / 394);
+    const totalCellSize = cellSize + gap; // Distancia de centro a centro
 
-  const initGroups = findMatchGroups(board);
-  if(initGroups.length === 0){ if(cb) cb(); return; }
-  processGroupsForOwner(initGroups, initialOwner);
-  // remove initial
-  const remInit = new Set();
-  initGroups.forEach(g=>g.coords.forEach(p=>remInit.add(p.y+','+p.x)));
-  remInit.forEach(k=>{ const [y,x]=k.split(',').map(Number); board[y][x]=null; });
-  applyGravity();
-  const next = 1 - initialOwner;
-  setTimeout(()=> processAll(next, ()=>{ render(); if(cb) cb(); }), 200);
+    for (let x = 0; x < COLS; x++) {
+        let emptyCount = 0;
+        // Itera desde abajo hacia arriba
+        for (let y = ROWS - 1; y >= 0; y--) {
+            if (board[y][x] === null) {
+                emptyCount++; // Contamos el espacio vacío
+            } else if (emptyCount > 0) {
+                // Si encontramos una ficha y hay espacio debajo, la movemos
+                const cellEl = document.getElementById(`cell-${y}-${x}`);
+                if (cellEl) {
+                    const drop = emptyCount * totalCellSize;
+                    cellEl.style.transform = `translateY(${drop}px)`; // Animación de caída
+                    cellEl.id = `cell-${y + emptyCount}-${x}`; // Actualiza su ID a la nueva posición
+                }
+                // Actualiza el array de datos
+                board[y + emptyCount][x] = board[y][x];
+                board[y][x] = null;
+            }
+        }
+    }
+
+    // Espera a que la animación de caída termine
+    setTimeout(() => {
+        const newTiles = applyGravity(); // Rellena los datos del tablero con fichas nuevas
+        renderBoard(newTiles); // Re-dibuja el tablero (animando las fichas nuevas)
+        setTimeout(onComplete, 100); // Llama al siguiente paso
+    }, TILE_FALL_DURATION);
+}
+
+/**
+ * 🌟 3. ORQUESTADOR PRINCIPAL DE CASCADAS (REEMPLAZA A `resolveBoard` ORIGINAL)
+ */
+function resolveBoard(initialOwner, cb) {
+    isBoardLocked = true;
+    
+    const processCascades = (owner) => {
+        const groups = findMatchGroups(board);
+        if (groups.length === 0) {
+            // No hay más combinaciones, termina el proceso
+            isBoardLocked = false;
+            if (cb) cb();
+            return;
+        }
+
+        // 1. Dar puntos y energía por las combinaciones encontradas
+        processGroupsForOwner(groups, owner);
+        renderPlayers(); // Actualiza la UI de los jugadores
+
+        // 2. Animar la destrucción de las fichas
+        const tilesToDestroy = new Set();
+        groups.forEach(g => g.coords.forEach(p => tilesToDestroy.add(`${p.y},${p.x}`)));
+
+        tilesToDestroy.forEach(key => {
+            const [y, x] = key.split(',').map(Number);
+            const cellEl = document.getElementById(`cell-${y}-${x}`);
+            if (cellEl) {
+                cellEl.classList.add('destroying');
+            }
+        });
+
+        // 3. Esperar a que la animación de destrucción termine
+        setTimeout(() => {
+            // 4. Eliminar las fichas del array de datos
+            tilesToDestroy.forEach(key => {
+                const [y, x] = key.split(',').map(Number);
+                board[y][x] = null;
+            });
+
+            // 5. Iniciar la animación de gravedad y rellenado
+            animateGravityAndRefill(() => {
+                // 6. Volver a comprobar si hay nuevas cascadas
+                processCascades(1 - owner); // Las cascadas alternan el propietario
+            });
+        }, TILE_DESTROY_DURATION);
+    };
+
+    // Inicia el primer paso de la cascada
+    processCascades(initialOwner);
+}
+
+/**
+ * 🌟 4. FUNCIÓN DE AYUDA PARA ATAQUES QUE DESTRUYEN FICHAS
+ */
+function animateAndClearTiles(tilesToClear, owner, cb) {
+    isBoardLocked = true;
+    const counts = {};
+    
+    // 1. Contar fichas y animar destrucción
+    tilesToClear.forEach(({ y, x }) => {
+        const tile = board[y][x];
+        if (tile) {
+            counts[tile] = (counts[tile] || 0) + 1;
+            const cellEl = document.getElementById(`cell-${y}-${x}`);
+            if (cellEl) cellEl.classList.add('destroying');
+        }
+    });
+
+    // 2. Esperar a que termine la animación
+    setTimeout(() => {
+        // 3. Dar energía y bonus (lógica copiada de los poderes)
+        Object.keys(counts).forEach(color => {
+            if (color === WOLF) {
+                if (players[owner].evo < 1) {
+                    players[owner].evo = 1;
+                    showBubble(players[owner].name + ' obtuvo 1 punto de evolución!');
+                }
+            } else {
+                awardEnergyToOwnerColor(owner, color, counts[color]);
+            }
+        });
+        renderPlayers();
+
+        // 4. Eliminar fichas de los datos
+        tilesToClear.forEach(({ y, x }) => {
+            board[y][x] = null;
+        });
+
+        // 5. Iniciar gravedad y cascadas
+        animateGravityAndRefill(() => {
+            resolveBoard(owner, cb); // El callback final es el onComplete original del ataque
+        });
+    }, TILE_DESTROY_DURATION);
 }
 
 /* ================= RENDER ================= */
@@ -1341,45 +1433,78 @@ function render(){
   document.getElementById('p2Moves').textContent = `(${players[1].moves})`;
 }
 
-/* Render board with solid colors and no letters (except wolf) */
-function renderBoard(){
-  const boardEl = document.getElementById('board'); boardEl.innerHTML='';
-  for(let y=0;y<ROWS;y++){
-    for(let x=0;x<COLS;x++){
-      const tile = board[y][x];
-      const div = document.createElement('div'); div.className='cell';
-      div.dataset.x = x; div.dataset.y = y;
-      if(tile === WOLF){
-        div.classList.add('lobo');
-        div.textContent = '🐺';
-        div.style.background = '#444';
-        div.style.color = '#fff';
-      } else if(tile){
-        div.classList.add(tile);
-        let tileColor = '';
-        // look up color from CREATURES (tile key might match creature keys or tile types)
-        if(CREATURES[tile] && CREATURES[tile].color) tileColor = CREATURES[tile].color;
-        else if(TILE_TYPES.includes(tile)){
-          // find a creature with that tileColor for color if exists, fallback to named
-          const found = Object.values(CREATURES).find(c=>c.tileColor===tile);
-          tileColor = found ? found.color : '';
+/**
+ * 🌟 RENDERBOARD ACTUALIZADO PARA POSICIONAMIENTO ABSOLUTO
+ */
+function renderBoard(newTilesCoords = []) {
+    const boardEl = document.getElementById('board');
+    const style = getComputedStyle(boardEl);
+    const padding = parseInt(style.paddingLeft);
+    // Mide el tamaño real del tablero (descontando el padding)
+    const contentWidth = boardEl.clientWidth - (padding * 2);
+    
+    if (contentWidth <= 0) return; // Seguridad para evitar errores
+
+    // Cálculo de tamaño de celda y hueco (basado en --cell-size y --gap)
+    const cellSize = contentWidth * (44 / 394);
+    const gap = contentWidth * (6 / 394);
+    const totalCellSize = cellSize + gap; // Distancia de centro a centro
+
+    boardEl.innerHTML = ''; // Limpia el tablero
+
+    for (let y = 0; y < ROWS; y++) {
+        for (let x = 0; x < COLS; x++) {
+            const tile = board[y][x];
+            if (tile === null) continue; // No dibuja celdas vacías
+
+            const div = document.createElement('div');
+            div.className = 'cell';
+            div.id = `cell-${y}-${x}`;
+            div.dataset.x = x;
+            div.dataset.y = y;
+
+            // Posicionamiento y tamaño dinámico
+            div.style.left = `${x * totalCellSize}px`;
+            div.style.top = `${y * totalCellSize}px`;
+            div.style.width = `${cellSize}px`;
+            div.style.height = `${cellSize}px`;
+
+            // Aplica animación si es una ficha nueva
+            if (newTilesCoords.some(coord => coord.x === x && coord.y === y)) {
+                div.classList.add('new-tile');
+            }
+            
+            // Asigna colores y contenido
+            if (tile === WOLF) {
+                div.classList.add('lobo');
+                div.textContent = '🐺';
+                div.style.background = '#444';
+                div.style.color = '#fff';
+            } else if (tile) {
+                div.classList.add(tile);
+                let tileColor = '';
+                // Busca el color en el catálogo
+                const found = Object.values(CREATURES).find(c => c.tileColor === tile);
+                tileColor = found ? found.color : '';
+
+                if(!tileColor){
+                  // Fallback si no se encuentra (aunque no debería pasar)
+                  const map = { agua:'#3b82f6', fuego:'#ef4444', trueno:'#eab308', naturaleza:'#22c55e', sombra:'#9333ea' };
+                  tileColor = map[tile] || '#333';
+                }
+                div.style.background = tileColor;
+                div.textContent = '';
+            }
+
+            if (selectedCell && selectedCell.x === x && selectedCell.y === y) {
+                div.classList.add('selected');
+            }
+            div.addEventListener('click', () => onCellClick(x, y));
+            boardEl.appendChild(div);
         }
-        if(!tileColor){
-          // fallback mapping
-          const map = { agua:'#3b82f6', fuego:'#ef4444', trueno:'#eab308', naturaleza:'#22c55e', sombra:'#9333ea' };
-          tileColor = map[tile] || '#333';
-        }
-        div.style.background = tileColor;
-        div.textContent = '';
-      } else {
-        div.classList.add('empty'); div.style.background = '#081028'; div.textContent = '';
-      }
-      if(selectedCell && selectedCell.x===x && selectedCell.y===y) div.classList.add('selected');
-      div.addEventListener('click', ()=> onCellClick(x,y));
-      boardEl.appendChild(div);
     }
-  }
 }
+
 
 /* Render players and creature cards with bars, buttons, attack descriptions */
 function renderPlayers(){
@@ -1395,20 +1520,9 @@ function renderPlayers(){
      }
      if (c.entangledTurns && c.entangledTurns > 0) {
       w.classList.add('entangled');
-
-      // Añadimos unas hojitas flotando 🌿
-      for (let i = 0; i < 2; i++) {
-       const leaf = document.createElement('div');
-       leaf.className = 'leaf';
-       leaf.style.left = `${20 + i * 40}%`;
-       leaf.style.top = `${10 + i * 20}%`;
-       w.appendChild(leaf);
-      }
      }
-
-     // 🔴 marcar como eliminada si hp <= 0
      if (c.hp <= 0) {
-     w.classList.add('dead');
+       w.classList.add('dead');
      }
 
       const img = document.createElement('img'); img.src = c.evolved ? (CREATURES[c.type].imgEvo || '') : (CREATURES[c.type].img || '');
@@ -1425,7 +1539,7 @@ function renderPlayers(){
       const hpText = document.createElement('div'); hpText.className='bar-text'; hpText.textContent = `${c.hp} / ${MAX_HP}`;
       hpBar.appendChild(hpFill); hpBar.appendChild(hpText); info.appendChild(hpBar);
       // ===== Energy bar (actual / coste real) =====
-     
+      
      const baseCost = ENERGY_COSTS[c.type] || ENERGY_COSTS[c.power] || 20;
      const req = Math.ceil(baseCost / (c.evolved ? 2 : 1));
      const enBar = document.createElement('div');
@@ -1435,15 +1549,13 @@ function renderPlayers(){
      enFill.className = 'fill energyFill';
      enFill.style.width = clamp(Math.round(((c.energy || 0) / req) * 100), 0, 100) + '%';
 
-     // Añadimos dataset por si hace falta debug
      enFill.dataset.pi = pi;
      enFill.dataset.ci = ci;
 
-     // === ✨ NUEVO: efecto visual cuando está lista ===
      if (c.energy >= req) {
       enFill.classList.add('glow', 'ready');
      } else {
-     enFill.classList.remove('glow', 'ready');
+       enFill.classList.remove('glow', 'ready');
      }
 
      const enText = document.createElement('div');
@@ -1486,21 +1598,47 @@ function renderPlayers(){
 }
 
 /* ================= Interaction: moving tiles ================= */
+/**
+ * 🌟 ONCELLCLICK ACTUALIZADO
+ */
 function onCellClick(x,y){
-  if(!selectedCell){ selectedCell = {x,y}; renderBoard(); return; }
-  const dx = Math.abs(selectedCell.x - x), dy = Math.abs(selectedCell.y - y);
-  if((dx===1 && dy===0) || (dx===0 && dy===1)){
-    // swap
-    [board[selectedCell.y][selectedCell.x], board[y][x]] = [board[y][x], board[selectedCell.y][selectedCell.x]];
-    selectedCell = null;
-    movesLeft = Math.max(0, movesLeft - 1);
-    players[currentPlayer].moves = Math.max(0, players[currentPlayer].moves - 1);
-    resolveBoard(currentPlayer, ()=>{ render(); if(movesLeft <= 0) endTurn(); });
-    resetTimer();
-  } else {
-    selectedCell = {x,y}; renderBoard();
-  }
+    if (isBoardLocked) return; // No hacer nada si el tablero está animándose
+    if (!selectedCell) {
+        selectedCell = { x, y };
+        renderBoard();
+        return;
+    }
+
+    const dx = Math.abs(selectedCell.x - x), dy = Math.abs(selectedCell.y - y);
+    if ((dx === 1 && dy === 0) || (dx === 0 && dy === 1)) {
+        // Intercambia
+        [board[selectedCell.y][selectedCell.x], board[y][x]] = [board[y][x], board[selectedCell.y][selectedCell.x]];
+        
+        // Comprueba si el movimiento es válido
+        const groups = findMatchGroups(board);
+        if (groups.length > 0) {
+            // Movimiento VÁLIDO
+            movesLeft = Math.max(0, movesLeft - 1);
+            players[currentPlayer].moves = Math.max(0, players[currentPlayer].moves - 1);
+            selectedCell = null;
+            // Inicia la secuencia de animación
+            resolveBoard(currentPlayer, () => {
+                render();
+                if (movesLeft <= 0) endTurn();
+            });
+            resetTimer();
+        } else {
+            // Movimiento INVÁLIDO, deshacer
+            [board[selectedCell.y][selectedCell.x], board[y][x]] = [board[y][x], board[selectedCell.y][selectedCell.x]];
+            selectedCell = { x, y };
+            renderBoard();
+        }
+    } else {
+        selectedCell = { x, y };
+        renderBoard();
+    }
 }
+
 
 /* ================= Attack flow: choose target clicking enemy creature ================= */
 function selectAttackTarget(pi,ci){
@@ -1520,59 +1658,14 @@ function selectAttackTarget(pi,ci){
   });
 }
 
-function performAttack(pi,ci,targetIdx){
-  const attacker = players[pi].criaturas[ci];
-  const opponentIndex = 1 - pi;
-  const target = players[opponentIndex].criaturas[targetIdx];
-  const cost = Math.ceil(ENERGY_COSTS[attacker.type] / (attacker.evolved ? 2 : 1));
-  if(attacker.energy < cost) return;
-  attacker.energy = Math.max(0, attacker.energy - cost);
-
-  // Show attack message with creature name
-  showAttackMessage(`¡Ataque — ${attacker.nombre}!`, CREATURES[attacker.type].color || '#ff6b6b');
-
-  // projectile animation
-  const attackerEl = document.getElementById(`p${pi}-c${ci}`);
-  const defenderEl = document.getElementById(`p${opponentIndex}-c${targetIdx}`);
-  const attackerRect = attackerEl ? attackerEl.getBoundingClientRect() : null;
-  const defenderRect = defenderEl ? defenderEl.getBoundingClientRect() : null;
-
-  const proj = document.createElement('div'); proj.className='projectile';
-  proj.style.background = CREATURES[attacker.type].color || '#fff';
-  document.body.appendChild(proj);
-
-  let startX = window.innerWidth/2, startY = window.innerHeight/2;
-  if(attackerRect){ startX = attackerRect.left + attackerRect.width/2; startY = attackerRect.top + attackerRect.height/2; }
-  let endX = startX, endY = startY - 200;
-  if(defenderRect){ endX = defenderRect.left + defenderRect.width/2; endY = defenderRect.top + defenderRect.height/2; }
-
-  proj.style.left = (startX-11) + 'px'; proj.style.top = (startY-11) + 'px';
-  proj.animate([
-    { transform:`translate(0,0) scale(1)`, opacity:1 },
-    { transform:`translate(${endX-startX}px, ${endY-startY}px) scale(0.9)`, opacity:1 }
-  ], { duration: 700, easing: 'cubic-bezier(.2,.9,.2,1)' });
-
-  setTimeout(()=>{
-    proj.remove();
-    const ctx = { board, ownerIndex: currentPlayer, onComplete: ()=>{ render(); checkWin(); if(movesLeft<=0) endTurn(); } };
-    if(defenderEl){ defenderEl.classList.add('hit'); setTimeout(()=> defenderEl.classList.remove('hit'),450); }
-    const powerFn = POWERS[ attacker.type ] || POWERS[ attacker.power ] || POWERS[ CREATURES[attacker.type] && CREATURES[attacker.type].tileColor ];
-    if(powerFn) powerFn(attacker, target, ctx);
-    else ctx.onComplete();
-
-    // decrease move counters (attack costs one of player's moves)
-    movesLeft = Math.max(0, movesLeft - 1);
-    players[pi].moves = Math.max(0, players[pi].moves - 1);
-    resetTimer();
-  }, 720);
-}
+// La función performAttack ya se ha reemplazado más arriba
 
 /* ================= Evolution ================= */
 function evolveCreature(pi,ci){
   if(pi !== currentPlayer) return;
   const player = players[pi]; 
   const cr = player.criaturas[ci];
-  if(player.evo <= 0 || cr.evolved) return;
+  if(player.evo <= 0 || cr.evolved || isBoardLocked) return; // 🌟 No evolucionar si el tablero está bloqueado
   player.evo = Math.max(0, player.evo - 1);
 
   // overlay transition (slower)
@@ -1592,7 +1685,6 @@ function evolveCreature(pi,ci){
   const cost = Math.ceil(ENERGY_COSTS[cr.type] / (cr.evolved ? 2 : 1));
   cr.energy = Math.min(cr.energy, cost);
 
-  // ⚡ Ajustar energía si tiene más de 10
   if(cr.energy > 10){
     cr.energy = 10;
   }
@@ -1608,21 +1700,51 @@ function evolveCreature(pi,ci){
 
 /* ================= Visual helpers ================= */
 function highlightBoardRow(row){
-  document.querySelectorAll('#board .cell').forEach(c=>{
-    if(+c.dataset.y === row) c.classList.add('flash-row');
-  });
-  setTimeout(()=>{
-    document.querySelectorAll('#board .cell').forEach(c=> c.classList.remove('flash-row'));
-  }, 800);
+  // Esta función necesita ser actualizada para el nuevo renderizado
+  const boardEl = document.getElementById('board');
+  const style = getComputedStyle(boardEl);
+  const padding = parseInt(style.paddingLeft);
+  const contentWidth = boardEl.clientWidth - (padding * 2);
+  const cellSize = contentWidth * (44 / 394);
+  const gap = contentWidth * (6 / 394);
+  const totalCellSize = cellSize + gap;
+
+  for(let x=0; x < COLS; x++) {
+      const flash = document.createElement('div');
+      flash.className = 'cell flash-row';
+      flash.style.left = `${x * totalCellSize}px`;
+      flash.style.top = `${row * totalCellSize}px`;
+      flash.style.width = `${cellSize}px`;
+      flash.style.height = `${cellSize}px`;
+      flash.style.background = 'rgba(255, 255, 255, 0.5)';
+      flash.style.zIndex = '100';
+      boardEl.appendChild(flash);
+      setTimeout(()=> flash.remove(), 800);
+  }
 }
 
 function highlightBoardColumn(col){
-  document.querySelectorAll('#board .cell').forEach(c=>{
-    if(+c.dataset.x === col) c.classList.add('flash-col');
-  });
-  setTimeout(()=>{
-    document.querySelectorAll('#board .cell').forEach(c=> c.classList.remove('flash-col'));
-  }, 800);
+  // Esta función necesita ser actualizada para el nuevo renderizado
+  const boardEl = document.getElementById('board');
+  const style = getComputedStyle(boardEl);
+  const padding = parseInt(style.paddingLeft);
+  const contentWidth = boardEl.clientWidth - (padding * 2);
+  const cellSize = contentWidth * (44 / 394);
+  const gap = contentWidth * (6 / 394);
+  const totalCellSize = cellSize + gap;
+  
+  for(let y=0; y < ROWS; y++) {
+      const flash = document.createElement('div');
+      flash.className = 'cell flash-col';
+      flash.style.left = `${col * totalCellSize}px`;
+      flash.style.top = `${y * totalCellSize}px`;
+      flash.style.width = `${cellSize}px`;
+      flash.style.height = `${cellSize}px`;
+      flash.style.background = 'rgba(255, 255, 255, 0.5)';
+      flash.style.zIndex = '100';
+      boardEl.appendChild(flash);
+      setTimeout(()=> flash.remove(), 800);
+  }
 }
 
 function flashEnergy(pi,ci){
@@ -1667,9 +1789,10 @@ function updateTimerDisplay(){
 
 /* ================= End turn ================= */
 function endTurn() {
-  // Reinicia movimientos del jugador actual
-  players[currentPlayer].moves = 2;
+  stopTimer(); // Detener el temporizador
+  isBoardLocked = true; // Bloquear el tablero durante el cambio de turno
 
+  players[currentPlayer].moves = 2;
   const next = 1 - currentPlayer;
 
   showTurnOverlay(players[next].name, () => {
@@ -1681,10 +1804,7 @@ function endTurn() {
       if (c.hp > 0 && c.burnedTurns && c.burnedTurns > 0) {
         c.hp = Math.max(0, c.hp - 5);
         c.burnedTurns--;
-
         showBubble(`${c.nombre} sufre 5 de daño por quemadura!`);
-
-        // Si muere por la quemadura
         if (c.hp <= 0) {
           c.hp = 0;
           showBubble(`${c.nombre} ha sido derrotado por la quemadura!`);
@@ -1694,23 +1814,23 @@ function endTurn() {
 
     // === 🪴 APLICAR PENALIZACIÓN DE MOVIMIENTO (Sylphora) ===
     if (players[currentPlayer].skipMovePenalty) {
-      players[currentPlayer].moves = 1; // empieza con solo 1 movimiento
-      players[currentPlayer].skipMovePenalty = false; // se resetea
+      players[currentPlayer].moves = 1; 
+      players[currentPlayer].skipMovePenalty = false; 
       showBubble(`${players[currentPlayer].name} perdió un movimiento por las enredaderas!`);
     } else {
       players[currentPlayer].moves = 2; // normal
     }
 
-    // === Inicializar movimientos ===
     movesLeft = players[currentPlayer].moves;
-
-    resetTimer();
     render();
 
-    checkWin(); // comprobar si la partida termina aquí
     if (!checkWin()) {
       // después de aplicar efectos, limpiar tablero si hay matches
-      resolveBoard(currentPlayer, () => { render(); });
+      resolveBoard(currentPlayer, () => { 
+          render(); 
+          resetTimer(); // Reinicia el temporizador DESPUÉS de que todo se resuelva
+          isBoardLocked = false; // Desbloquea el tablero
+      });
     }
   });
 }
@@ -1740,6 +1860,7 @@ function checkWin(){
   for(let i=0;i<2;i++){
     if(players[i].criaturas.length > 0 && players[i].criaturas.every(c=>c.hp <= 0)){
       stopTimer();
+      isBoardLocked = true; // Bloquea el juego
       setTimeout(()=> alert(`${players[1-i].name} gana!`), 60);
       return true;
     }
